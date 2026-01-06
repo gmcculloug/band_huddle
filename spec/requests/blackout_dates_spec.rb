@@ -1,9 +1,12 @@
 require 'spec_helper'
 
 RSpec.describe 'Blackout Dates API', type: :request do
+  include TimeHelpers
+  freeze_time_for_testing
+
   let(:user) { create(:user) }
   let(:band) { create(:band, owner: user) }
-  
+
   before do
     # UserBand relationship is automatically created by the band factory
   end
@@ -14,33 +17,33 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
   describe 'POST /blackout_dates' do
     it 'requires authentication' do
-      post '/blackout_dates', date: '2025-12-25', reason: 'Holiday'
-      
+      post '/blackout_dates', date: tomorrow.to_s, reason: 'Holiday'
+
       expect(last_response).to be_redirect
       expect(last_response.location).to end_with('/login')
     end
 
     it 'creates a blackout date with valid data' do
       login_as(user, band)
-      
+
       expect {
-        post '/blackout_dates', date: '2025-12-25', reason: 'Holiday'
+        post '/blackout_dates', date: tomorrow.to_s, reason: 'Holiday'
       }.to change(BlackoutDate, :count).by(1)
-      
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
-      expect(response_data['blackout_date']).to eq('2025-12-25')
+      expect(response_data['blackout_date']).to eq(tomorrow.to_s)
       expect(response_data['reason']).to eq('Holiday')
     end
 
     it 'creates blackout date without reason' do
       login_as(user, band)
-      
+
       expect {
-        post '/blackout_dates', date: '2025-12-25'
+        post '/blackout_dates', date: tomorrow.to_s
       }.to change(BlackoutDate, :count).by(1)
-      
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -79,10 +82,10 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'returns error when blackout date already exists' do
       login_as(user, band)
-      create(:blackout_date, user: user, blackout_date: Date.parse('2025-12-25'))
-      
-      post '/blackout_dates', date: '2025-12-25', reason: 'Holiday'
-      
+      create(:blackout_date, user: user, blackout_date: tomorrow)
+
+      post '/blackout_dates', date: tomorrow.to_s, reason: 'Holiday'
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['error']).to eq('Blackout date already exists')
@@ -90,21 +93,21 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'handles various date formats' do
       login_as(user, band)
-      
+
       # Test ISO format
-      post '/blackout_dates', date: '2025-12-25', reason: 'Holiday'
+      post '/blackout_dates', date: tomorrow.to_s, reason: 'Holiday'
       expect(last_response.status).to eq(200)
-      
+
       # Test other formats
-      post '/blackout_dates', date: 'Dec 25, 2024', reason: 'Holiday'
+      post '/blackout_dates', date: last_christmas.strftime('%b %d, %Y'), reason: 'Holiday'
       expect(last_response.status).to eq(200)
     end
 
     it 'handles whitespace in date parameter' do
       login_as(user, band)
-      
-      post '/blackout_dates', date: '  2025-12-25  ', reason: 'Holiday'
-      
+
+      post '/blackout_dates', date: "  #{tomorrow}  ", reason: 'Holiday'
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -113,19 +116,19 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
   describe 'POST /blackout_dates/bulk' do
     it 'requires authentication' do
-      post '/blackout_dates/bulk', dates: '2025-12-25,2025-12-26', reason: 'Holiday'
-      
+      post '/blackout_dates/bulk', dates: "#{tomorrow},#{next_week}", reason: 'Holiday'
+
       expect(last_response).to be_redirect
       expect(last_response.location).to end_with('/login')
     end
 
     it 'creates multiple blackout dates' do
       login_as(user, band)
-      
+
       expect {
-        post '/blackout_dates/bulk', dates: '2025-12-25,2025-12-26', reason: 'Holiday'
+        post '/blackout_dates/bulk', dates: "#{tomorrow},#{next_week}", reason: 'Holiday'
       }.to change(BlackoutDate, :count).by(2)
-      
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -134,11 +137,11 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'creates blackout dates without reason' do
       login_as(user, band)
-      
+
       expect {
-        post '/blackout_dates/bulk', dates: '2025-12-25,2025-12-26'
+        post '/blackout_dates/bulk', dates: "#{tomorrow},#{next_week}"
       }.to change(BlackoutDate, :count).by(2)
-      
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -146,10 +149,10 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'handles partial failures gracefully' do
       login_as(user, band)
-      create(:blackout_date, user: user, blackout_date: Date.parse('2025-12-25'))
-      
-      post '/blackout_dates/bulk', dates: '2025-12-25,2025-12-26,invalid-date', reason: 'Holiday'
-      
+      create(:blackout_date, user: user, blackout_date: tomorrow)
+
+      post '/blackout_dates/bulk', dates: "#{tomorrow},#{next_week},invalid-date", reason: 'Holiday'
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be false
@@ -159,9 +162,9 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'skips empty date strings' do
       login_as(user, band)
-      
-      post '/blackout_dates/bulk', dates: '2025-12-25,,2025-12-26,', reason: 'Holiday'
-      
+
+      post '/blackout_dates/bulk', dates: "#{tomorrow},,#{next_week},", reason: 'Holiday'
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -180,11 +183,11 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'handles single date' do
       login_as(user, band)
-      
+
       expect {
-        post '/blackout_dates/bulk', dates: '2025-12-25', reason: 'Holiday'
+        post '/blackout_dates/bulk', dates: tomorrow.to_s, reason: 'Holiday'
       }.to change(BlackoutDate, :count).by(1)
-      
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -194,21 +197,21 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
   describe 'DELETE /blackout_dates/bulk' do
     it 'requires authentication' do
-      delete '/blackout_dates/bulk', dates: '2025-12-25,2025-12-26'
-      
+      delete '/blackout_dates/bulk', dates: "#{tomorrow},#{next_week}"
+
       expect(last_response).to be_redirect
       expect(last_response.location).to end_with('/login')
     end
 
     it 'deletes multiple blackout dates' do
       login_as(user, band)
-      blackout1 = create(:blackout_date, user: user, blackout_date: Date.parse('2025-12-25'))
-      blackout2 = create(:blackout_date, user: user, blackout_date: Date.parse('2025-12-26'))
-      
+      blackout1 = create(:blackout_date, user: user, blackout_date: tomorrow)
+      blackout2 = create(:blackout_date, user: user, blackout_date: next_week)
+
       expect {
-        delete '/blackout_dates/bulk', dates: '2025-12-25,2025-12-26'
+        delete '/blackout_dates/bulk', dates: "#{tomorrow},#{next_week}"
       }.to change(BlackoutDate, :count).by(-2)
-      
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -217,9 +220,9 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'handles non-existent dates gracefully' do
       login_as(user, band)
-      
-      delete '/blackout_dates/bulk', dates: '2025-12-25,2025-12-26'
-      
+
+      delete '/blackout_dates/bulk', dates: "#{tomorrow},#{next_week}"
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -228,10 +231,10 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'skips invalid dates silently' do
       login_as(user, band)
-      blackout = create(:blackout_date, user: user, blackout_date: Date.parse('2025-12-25'))
-      
-      delete '/blackout_dates/bulk', dates: '2025-12-25,invalid-date,2025-12-26'
-      
+      blackout = create(:blackout_date, user: user, blackout_date: tomorrow)
+
+      delete '/blackout_dates/bulk', dates: "#{tomorrow},invalid-date,#{next_week}"
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -240,10 +243,10 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'handles empty date strings' do
       login_as(user, band)
-      blackout = create(:blackout_date, user: user, blackout_date: Date.parse('2025-12-25'))
-      
-      delete '/blackout_dates/bulk', dates: '2025-12-25,,2025-12-26,'
-      
+      blackout = create(:blackout_date, user: user, blackout_date: tomorrow)
+
+      delete '/blackout_dates/bulk', dates: "#{tomorrow},,#{next_week},"
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -253,20 +256,20 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
   describe 'DELETE /blackout_dates/:date' do
     it 'requires authentication' do
-      delete '/blackout_dates/2025-12-25'
-      
+      delete "/blackout_dates/#{tomorrow}"
+
       expect(last_response).to be_redirect
       expect(last_response.location).to end_with('/login')
     end
 
     it 'deletes a blackout date' do
       login_as(user, band)
-      blackout = create(:blackout_date, user: user, blackout_date: Date.parse('2025-12-25'))
-      
+      blackout = create(:blackout_date, user: user, blackout_date: tomorrow)
+
       expect {
-        delete '/blackout_dates/2025-12-25'
+        delete "/blackout_dates/#{tomorrow}"
       }.to change(BlackoutDate, :count).by(-1)
-      
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
@@ -275,9 +278,9 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'returns error when blackout date not found' do
       login_as(user, band)
-      
-      delete '/blackout_dates/2025-12-25'
-      
+
+      delete "/blackout_dates/#{tomorrow}"
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['error']).to eq('Blackout date not found')
@@ -303,10 +306,10 @@ RSpec.describe 'Blackout Dates API', type: :request do
 
     it 'handles whitespace in date parameter' do
       login_as(user, band)
-      blackout = create(:blackout_date, user: user, blackout_date: Date.parse('2025-12-25'))
-      
-      delete "/blackout_dates/#{URI.encode_www_form_component('  2025-12-25  ')}"
-      
+      blackout = create(:blackout_date, user: user, blackout_date: tomorrow)
+
+      delete "/blackout_dates/#{URI.encode_www_form_component("  #{tomorrow}  ")}"
+
       expect(last_response.status).to eq(200)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true

@@ -30,6 +30,7 @@ group :development, :test do
   gem 'factory_bot'
   gem 'faker'
   gem 'database_cleaner-active_record'
+  gem 'timecop'
 end
 
 gem "rackup", "~> 2.2"

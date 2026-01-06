@@ -5,10 +5,38 @@ require 'rack/test'
 require 'capybara/rspec'
 require 'factory_bot'
 require 'faker'
+require 'timecop'
 require_relative '../app'
 
 # Load factories
 require_relative 'factories'
+
+# Time helpers for consistent date testing
+module TimeHelpers
+  # Freeze time to a consistent date for reliable testing
+  def self.included(base)
+    base.extend(ClassMethods)
+  end
+
+  module ClassMethods
+    def freeze_time_for_testing
+      let(:frozen_date) { Date.new(2024, 6, 15) } # Saturday, June 15th, 2024
+      let(:frozen_time) { Time.new(2024, 6, 15, 12, 0, 0) } # Noon on the frozen date
+      let(:tomorrow) { frozen_date + 1.day }
+      let(:yesterday) { frozen_date - 1.day }
+      let(:next_week) { frozen_date + 7.days }
+      let(:last_week) { frozen_date - 7.days }
+      let(:next_month) { frozen_date + 1.month }
+      let(:last_month) { frozen_date - 1.month }
+      let(:last_christmas) { Date.new(frozen_date.year - 1, 12, 25) }
+      let(:next_christmas) { Date.new(frozen_date.year, 12, 25) }
+
+      before do
+        Timecop.freeze(frozen_time)
+      end
+    end
+  end
+end
 
 
 RSpec.configure do |config|
@@ -89,6 +117,11 @@ RSpec.configure do |config|
     rescue ActiveRecord::StatementInvalid
       # SongCatalog table doesn't exist in test DB, skip
     end
+  end
+
+  config.after(:each) do
+    # Reset time after each test to prevent test contamination
+    Timecop.return
   end
 end
 
