@@ -236,6 +236,28 @@ module ApplicationHelpers
     /^\/song_catalog/ => '/songs'
   }.freeze
 
+  # Band color helper - generates consistent colors for band labels
+  def band_label_color(band)
+    # Define a palette of visually distinct, bold colors
+    # Each color is a hash with background and text colors
+    color_palette = [
+      { bg: '#3b82f6', text: '#ffffff' },  # Bold Blue
+      { bg: '#10b981', text: '#ffffff' },  # Bold Green
+      { bg: '#ec4899', text: '#ffffff' },  # Bold Pink
+      { bg: '#f59e0b', text: '#ffffff' },  # Bold Amber
+      { bg: '#6366f1', text: '#ffffff' },  # Bold Indigo
+      { bg: '#f97316', text: '#ffffff' },  # Bold Orange
+      { bg: '#e11d48', text: '#ffffff' },  # Bold Rose
+      { bg: '#06b6d4', text: '#ffffff' },  # Bold Cyan
+      { bg: '#8b5cf6', text: '#ffffff' },  # Bold Purple
+      { bg: '#84cc16', text: '#ffffff' }   # Bold Lime
+    ]
+
+    # Use band ID to consistently select a color from the palette
+    index = band.id % color_palette.length
+    color_palette[index]
+  end
+
   # OAuth helper methods
   def oauth_provider_configured?(provider)
     require_relative '../services/oauth_service'

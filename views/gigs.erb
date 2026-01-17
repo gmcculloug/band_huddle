@@ -62,7 +62,8 @@
                                     </span>
                                 <% end %>
                                 <% if @view_mode == 'all' %>
-                                  <span style="display: inline-block; background: #edf2f7; color: #2d3748; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 500; margin-right: 8px;">
+                                  <% band_color = band_label_color(set_list.band) %>
+                                  <span style="display: inline-block; background: <%= band_color[:bg] %>; color: <%= band_color[:text] %>; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 500; margin-right: 8px;">
                                     <%= set_list.band.name %>
                                   </span>
                                 <% end %>
