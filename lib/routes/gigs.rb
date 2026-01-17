@@ -30,12 +30,24 @@ class Routes::Gigs < Sinatra::Base
     # Set breadcrumbs
     set_breadcrumbs(breadcrumb_for_section('gigs'))
 
-    all_gigs = filter_by_current_band(Gig).includes(:venue)
+    # Determine view mode
+    view_all = params[:view] == 'all' && current_user.bands.count > 1
+
+    # Conditional data fetching
+    if view_all
+      user_band_ids = current_user.bands.pluck(:id)
+      all_gigs = Gig.joins(:band).where(bands: { id: user_band_ids }).includes(:venue, :band)
+    else
+      all_gigs = filter_by_current_band(Gig).includes(:venue)
+    end
+
     today = Date.current
     @upcoming_gigs = all_gigs.where('performance_date >= ?', today).order(:performance_date) || []
 
     # Count of past gigs for display
     @past_gigs_count = all_gigs.where('performance_date < ?', today).count
+
+    @view_mode = view_all ? 'all' : 'current'
 
     erb :gigs
   end
@@ -59,11 +71,23 @@ class Routes::Gigs < Sinatra::Base
       { label: 'Past Gigs', icon: '', url: nil }
     )
 
-    all_gigs = filter_by_current_band(Gig).includes(:venue)
+    # Determine view mode
+    view_all = params[:view] == 'all' && current_user.bands.count > 1
+
+    # Conditional data fetching
+    if view_all
+      user_band_ids = current_user.bands.pluck(:id)
+      all_gigs = Gig.joins(:band).where(bands: { id: user_band_ids }).includes(:venue, :band)
+    else
+      all_gigs = filter_by_current_band(Gig).includes(:venue)
+    end
+
     today = Date.current
 
     # Past gigs: performance_date is in the past
     @past_gigs = all_gigs.where('performance_date < ?', today).order(performance_date: :desc) || []
+
+    @view_mode = view_all ? 'all' : 'current'
 
     erb :past_gigs
   end

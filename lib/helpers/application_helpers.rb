@@ -68,7 +68,7 @@ module ApplicationHelpers
 
   def filter_by_current_band(collection)
     return collection.none unless current_band && collection.respond_to?(:where)
-    
+
     case collection.name
     when 'Song'
       collection.joins(:bands).where(bands: { id: current_band.id })
@@ -78,6 +78,18 @@ module ApplicationHelpers
       collection.where(band: current_band)
     else
       collection
+    end
+  end
+
+  # Helper method for getting gigs based on view mode
+  def gigs_for_view_mode(view_mode, user)
+    if view_mode == 'all' && user.bands.count > 1
+      user_band_ids = user.bands.pluck(:id)
+      Gig.joins(:band).where(bands: { id: user_band_ids }).includes(:venue, :band)
+    elsif current_band
+      filter_by_current_band(Gig).includes(:venue)
+    else
+      Gig.none
     end
   end
   

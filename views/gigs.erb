@@ -26,6 +26,25 @@
     </div>
 </div>
 
+<!-- View Mode Toggle (only show if user has multiple bands) -->
+<% if current_user.bands.count > 1 %>
+  <div style="margin: 20px 0; display: flex; gap: 10px; align-items: center;">
+    <span style="color: #4a5568; font-weight: 500;">View:</span>
+    <div style="display: flex; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
+      <a href="/gigs"
+         class="<%= @view_mode == 'current' ? 'active' : '' %>"
+         style="padding: 8px 16px; text-decoration: none; color: <%= @view_mode == 'current' ? 'white' : '#4a5568' %>; background: <%= @view_mode == 'current' ? '#667eea' : 'white' %>; border: none;">
+        <%= current_band.name %>
+      </a>
+      <a href="/gigs?view=all"
+         class="<%= @view_mode == 'all' ? 'active' : '' %>"
+         style="padding: 8px 16px; text-decoration: none; color: <%= @view_mode == 'all' ? 'white' : '#4a5568' %>; background: <%= @view_mode == 'all' ? '#667eea' : 'white' %>; border-left: 1px solid #e2e8f0;">
+        All Bands
+      </a>
+    </div>
+  </div>
+<% end %>
+
 
 
 <% if @upcoming_gigs.any? || @past_gigs_count > 0 %>
@@ -41,6 +60,11 @@
                                     <span style="font-weight: normal; color: #718096; font-size: 0.9em;">
                                         <%= set_list.performance_date.strftime('%a, %b %d') %> -
                                     </span>
+                                <% end %>
+                                <% if @view_mode == 'all' %>
+                                  <span style="display: inline-block; background: #edf2f7; color: #2d3748; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 500; margin-right: 8px;">
+                                    <%= set_list.band.name %>
+                                  </span>
                                 <% end %>
                                 <%= set_list.name %>
                                 <% if set_list.start_time.present? %>
@@ -82,7 +106,7 @@
     <!-- Past Gigs Link -->
     <% if @past_gigs_count > 0 %>
         <div style="text-align: center; margin-top: 30px;">
-            <a href="/gigs/past" class="btn" style="background: none; border: 1px solid #e2e8f0; color: #4a5568; padding: 10px 20px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <a href="/gigs/past<%= @view_mode == 'all' ? '?view=all' : '' %>" class="btn" style="background: none; border: 1px solid #e2e8f0; color: #4a5568; padding: 10px 20px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2v6l4-4-4-4z"></path>
                     <path d="M21 12a9 9 0 11-9-9"></path>
