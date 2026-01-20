@@ -54,47 +54,58 @@
             <% @upcoming_gigs.each do |set_list| %>
                 <div class="set-list-item" style="cursor: pointer;" onclick="window.location.href='/gigs/<%= set_list.id %>'">
                     <div class="set-list-info">
-                        <h3 style="display: flex; align-items: center; gap: 10px;">
-                            <span style="flex: 1;">
+                        <div style="display: grid; grid-template-columns: 120px <%= @view_mode == 'all' ? '100px' : '' %> 1fr auto; gap: 15px; align-items: center;">
+                            <!-- Date Column -->
+                            <div style="font-weight: bold; color: #2d3748; font-size: 0.9em;">
                                 <% if set_list.performance_date.present? %>
-                                    <span style="font-weight: normal; color: #718096; font-size: 0.9em;">
-                                        <%= set_list.performance_date.strftime('%a, %b %d') %> -
+                                    <%= set_list.performance_date.strftime('%a, %b %d') %>
+                                <% end %>
+                            </div>
+
+                            <!-- Band Label Column (only show if viewing all bands) -->
+                            <% if @view_mode == 'all' %>
+                                <div>
+                                    <% band_color = band_label_color(set_list.band) %>
+                                    <span style="display: inline-block; background: <%= band_color[:bg] %>; color: <%= band_color[:text] %>; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 500; white-space: nowrap;">
+                                        <%= set_list.band.name %>
                                     </span>
-                                <% end %>
-                                <% if @view_mode == 'all' %>
-                                  <% band_color = band_label_color(set_list.band) %>
-                                  <span style="display: inline-block; background: <%= band_color[:bg] %>; color: <%= band_color[:text] %>; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 500; margin-right: 8px;">
-                                    <%= set_list.band.name %>
-                                  </span>
-                                <% end %>
-                                <%= set_list.name %>
+                                </div>
+                            <% end %>
+
+                            <!-- Gig Name and Time Column -->
+                            <div>
+                                <span style="font-weight: 600; font-size: 1.1em;"><%= set_list.name %></span>
                                 <% if set_list.start_time.present? %>
-                                    <span style="font-weight: normal; color: #718096; font-size: 0.9em;">
+                                    <span style="font-weight: normal; color: #2d3748; font-size: 0.9em; margin-left: 8px;">
                                         - <%= set_list.start_time.strftime('%I:%M %p') %>
                                         <% if set_list.end_time.present? %>
                                             - <%= set_list.end_time.strftime('%I:%M %p') %>
                                         <% end %>
                                     </span>
                                 <% end %>
-                            </span>
-                            <% if set_list.songs.any? %>
-                                <a href="/gigs/<%= set_list.id %>/gig_mode" target="_blank" class="gig-mode-button" onclick="event.stopPropagation();" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #4a5568; transition: all 0.2s; flex-shrink: 0; margin-right: 4px;" onmouseover="this.style.backgroundColor='#667eea'; this.style.borderColor='#5a67d8'; this.style.color='white';" onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#e2e8f0'; this.style.color='#4a5568';" title="Gig Mode - Offline Performance View">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                                        <line x1="8" y1="21" x2="16" y2="21"></line>
-                                        <line x1="12" y1="17" x2="12" y2="21"></line>
-                                        <circle cx="12" cy="10" r="3"></circle>
-                                    </svg>
-                                </a>
-                                <a href="/gigs/<%= set_list.id %>/print" target="_blank" class="print-icon-button" onclick="event.stopPropagation();" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #4a5568; transition: all 0.2s; flex-shrink: 0;" onmouseover="this.style.backgroundColor='#667eea'; this.style.borderColor='#5a67d8'; this.style.color='white';" onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#e2e8f0'; this.style.color='#4a5568';" title="Print Gig">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="6,9 6,2 18,2 18,9"></polyline>
-                                        <path d="M6,18H4a2,2 0,0,1-2-2V11a2,2 0,0,1,2,2H20a2,2 0,0,1,2,2v5a2,2 0,0,1-2,2H18"></path>
-                                        <polyline points="6,14 18,14 18,20 6,20 6,14"></polyline>
-                                    </svg>
-                                </a>
-                            <% end %>
-                        </h3>
+                            </div>
+
+                            <!-- Action Buttons Column -->
+                            <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                                <% if set_list.songs.any? %>
+                                    <a href="/gigs/<%= set_list.id %>/gig_mode" target="_blank" class="gig-mode-button" onclick="event.stopPropagation();" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #4a5568; transition: all 0.2s; flex-shrink: 0;" onmouseover="this.style.backgroundColor='#667eea'; this.style.borderColor='#5a67d8'; this.style.color='white';" onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#e2e8f0'; this.style.color='#4a5568';" title="Gig Mode - Offline Performance View">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                                            <circle cx="12" cy="10" r="3"></circle>
+                                        </svg>
+                                    </a>
+                                    <a href="/gigs/<%= set_list.id %>/print" target="_blank" class="print-icon-button" onclick="event.stopPropagation();" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #4a5568; transition: all 0.2s; flex-shrink: 0;" onmouseover="this.style.backgroundColor='#667eea'; this.style.borderColor='#5a67d8'; this.style.color='white';" onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#e2e8f0'; this.style.color='#4a5568';" title="Print Gig">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="6,9 6,2 18,2 18,9"></polyline>
+                                            <path d="M6,18H4a2,2 0,0,1-2-2V11a2,2 0,0,1,2,2H20a2,2 0,0,1,2,2v5a2,2 0,0,1-2,2H18"></path>
+                                            <polyline points="6,14 18,14 18,20 6,20 6,14"></polyline>
+                                        </svg>
+                                    </a>
+                                <% end %>
+                            </div>
+                        </div>
                         <% if set_list.notes.present? %>
                             <p style="font-style: italic; color: #718096;"><%= set_list.notes %></p>
                         <% end %>
