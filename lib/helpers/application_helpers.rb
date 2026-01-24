@@ -81,6 +81,28 @@ module ApplicationHelpers
     end
   end
 
+  # Smart gig access helper for cross-band access
+  def find_user_gig(gig_id)
+    unless logged_in?
+      raise ActiveRecord::RecordNotFound
+    end
+
+    # Security: Only allow access to gigs from user's bands
+    user_band_ids = current_user.bands.pluck(:id)
+    Gig.joins(:band)
+        .where(bands: { id: user_band_ids })
+        .includes(:venue, :band)
+        .find(gig_id)
+  end
+
+  def with_gig_band_context(gig)
+    original_band_id = session[:band_id]
+    session[:band_id] = gig.band.id
+    yield
+  ensure
+    session[:band_id] = original_band_id
+  end
+
   # Helper method for getting gigs based on view mode
   def gigs_for_view_mode(view_mode, user)
     if view_mode == 'all' && user.bands.count > 1
@@ -91,6 +113,12 @@ module ApplicationHelpers
     else
       Gig.none
     end
+  end
+
+  # Helper method to get current gig view mode from session
+  def current_gig_view_mode
+    return 'current' unless logged_in? && current_user.bands.count > 1
+    session[:gig_view_mode] || 'all'
   end
   
   # Calendar helper methods

@@ -16,15 +16,15 @@
   <div style="margin: 20px 0; display: flex; gap: 10px; align-items: center;">
     <span style="color: #4a5568; font-weight: 500;">View:</span>
     <div style="display: flex; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
-      <a href="/gigs/past"
-         class="<%= @view_mode == 'current' ? 'active' : '' %>"
-         style="padding: 8px 16px; text-decoration: none; color: <%= @view_mode == 'current' ? 'white' : '#4a5568' %>; background: <%= @view_mode == 'current' ? '#667eea' : 'white' %>; border: none;">
-        <%= current_band.name %>
-      </a>
       <a href="/gigs/past?view=all"
          class="<%= @view_mode == 'all' ? 'active' : '' %>"
-         style="padding: 8px 16px; text-decoration: none; color: <%= @view_mode == 'all' ? 'white' : '#4a5568' %>; background: <%= @view_mode == 'all' ? '#667eea' : 'white' %>; border-left: 1px solid #e2e8f0;">
+         style="padding: 8px 16px; text-decoration: none; color: <%= @view_mode == 'all' ? 'white' : '#4a5568' %>; background: <%= @view_mode == 'all' ? '#667eea' : 'white' %>; border: none;">
         All Bands
+      </a>
+      <a href="/gigs/past?view=current"
+         class="<%= @view_mode == 'current' ? 'active' : '' %>"
+         style="padding: 8px 16px; text-decoration: none; color: <%= @view_mode == 'current' ? 'white' : '#4a5568' %>; background: <%= @view_mode == 'current' ? '#667eea' : 'white' %>; border-left: 1px solid #e2e8f0;">
+        <%= current_band.name %>
       </a>
     </div>
   </div>
@@ -95,7 +95,7 @@
 <% end %>
 
 <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
-    <a href="/gigs<%= @view_mode == 'all' ? '?view=all' : '' %>" style="color: #718096; text-decoration: none; font-size: 0.9rem;">
+    <a href="/gigs" style="color: #718096; text-decoration: none; font-size: 0.9rem;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
             <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
             <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>

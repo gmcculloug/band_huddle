@@ -598,4 +598,273 @@ RSpec.describe 'Gigs API', type: :request do
       expect(response_data['error']).to eq('Target gig already has songs assigned')
     end
   end
-end 
+
+  describe 'Cross-Band Access' do
+    let(:user) { create(:user) }
+    let(:band_a) { create(:band, owner: user, name: 'Band A') }
+    let(:band_b) { create(:band, name: 'Band B') }
+    let(:band_c) { create(:band, name: 'Band C') }
+    let(:other_user) { create(:user) }
+    let(:other_band) { create(:band, owner: other_user, name: 'Other Band') }
+
+    before do
+      # UserBand relationships are automatically created by the band factory for owners
+      # Add user to band_b as a member
+      create(:user_band, user: user, band: band_b, role: 'member')
+    end
+
+    describe 'when user belongs to multiple bands' do
+      it 'allows access to gig from non-current band via GET /gigs/:id' do
+        gig_from_band_a = create(:gig, name: 'Band A Gig', band: band_a)
+        gig_from_band_b = create(:gig, name: 'Band B Gig', band: band_b)
+
+        # Login with band_a as current band
+        login_as(user, band_a)
+
+        # Should be able to access gig from band_b
+        get "/gigs/#{gig_from_band_b.id}"
+        expect(last_response).to be_ok
+        expect(last_response.body).to include('Band B Gig')
+
+        # Should still be able to access gig from current band
+        get "/gigs/#{gig_from_band_a.id}"
+        expect(last_response).to be_ok
+        expect(last_response.body).to include('Band A Gig')
+      end
+
+      it 'allows access to gig from non-current band via GET /gigs/:id/edit' do
+        gig_from_band_b = create(:gig, name: 'Band B Gig', band: band_b)
+
+        # Login with band_a as current band
+        login_as(user, band_a)
+
+        # Should be able to edit gig from band_b
+        get "/gigs/#{gig_from_band_b.id}/edit"
+        expect(last_response).to be_ok
+        expect(last_response.body).to include('Band B Gig')
+      end
+
+      it 'allows access to gig from non-current band via PUT /gigs/:id' do
+        gig_from_band_b = create(:gig, name: 'Band B Gig', band: band_b)
+
+        # Login with band_a as current band
+        login_as(user, band_a)
+
+        # Should be able to update gig from band_b
+        put "/gigs/#{gig_from_band_b.id}", {
+          name: 'Updated Band B Gig',
+          performance_date: '2024-12-25'
+        }
+
+        expect(last_response).to be_redirect
+        expect(gig_from_band_b.reload.name).to eq('Updated Band B Gig')
+        # Band should remain unchanged
+        expect(gig_from_band_b.band).to eq(band_b)
+      end
+
+      it 'allows access to gig from non-current band via DELETE /gigs/:id' do
+        gig_from_band_b = create(:gig, name: 'Band B Gig', band: band_b)
+
+        # Login with band_a as current band
+        login_as(user, band_a)
+
+        # Should be able to delete gig from band_b
+        expect {
+          delete "/gigs/#{gig_from_band_b.id}"
+        }.to change(Gig, :count).by(-1)
+
+        expect(last_response).to be_redirect
+      end
+
+      it 'preserves band context for related queries in manage songs' do
+        gig_from_band_b = create(:gig, name: 'Band B Gig', band: band_b)
+        song_band_a = create(:song, title: 'Band A Song', bands: [band_a])
+        song_band_b = create(:song, title: 'Band B Song', bands: [band_b])
+
+        # Login with band_a as current band
+        login_as(user, band_a)
+
+        # When accessing band_b gig, should see band_b songs, not band_a songs
+        get "/gigs/#{gig_from_band_b.id}/manage_songs"
+        expect(last_response).to be_ok
+        expect(last_response.body).to include('Band B Song')
+        expect(last_response.body).not_to include('Band A Song')
+      end
+
+      it 'preserves band context for venue queries in edit' do
+        venue_band_a = create(:venue, name: 'Band A Venue', band: band_a)
+        venue_band_b = create(:venue, name: 'Band B Venue', band: band_b)
+        gig_from_band_b = create(:gig, name: 'Band B Gig', band: band_b)
+
+        # Login with band_a as current band
+        login_as(user, band_a)
+
+        # When editing band_b gig, should see band_b venues, not band_a venues
+        get "/gigs/#{gig_from_band_b.id}/edit"
+        expect(last_response).to be_ok
+        expect(last_response.body).to include('Band B Venue')
+        expect(last_response.body).not_to include('Band A Venue')
+      end
+
+      it 'allows adding songs from correct band via POST /gigs/:id/songs' do
+        gig_from_band_b = create(:gig, name: 'Band B Gig', band: band_b)
+        song_band_a = create(:song, title: 'Band A Song', bands: [band_a])
+        song_band_b = create(:song, title: 'Band B Song', bands: [band_b])
+
+        # Login with band_a as current band
+        login_as(user, band_a)
+
+        # Should be able to add band_b song to band_b gig
+        expect {
+          post "/gigs/#{gig_from_band_b.id}/songs", song_id: song_band_b.id
+        }.to change(GigSong, :count).by(1)
+
+        expect(last_response).to be_redirect
+        expect(gig_from_band_b.songs).to include(song_band_b)
+      end
+
+      it 'correctly handles empty gigs lookup from correct band context' do
+        gig_from_band_b = create(:gig, name: 'Band B Source Gig', band: band_b)
+        empty_gig_band_a = create(:gig, name: 'Empty Band A Gig', band: band_a)
+        empty_gig_band_b = create(:gig, name: 'Empty Band B Gig', band: band_b)
+
+        # Login with band_a as current band
+        login_as(user, band_a)
+
+        # When getting empty gigs for band_b gig, should only see band_b empty gigs
+        get "/gigs/#{gig_from_band_b.id}/empty_gigs"
+        expect(last_response).to be_ok
+
+        response_data = JSON.parse(last_response.body)
+        gig_names = response_data['gigs'].map { |g| g['name'] }
+
+        expect(gig_names).to include('Empty Band B Gig')
+        expect(gig_names).not_to include('Empty Band A Gig')
+      end
+
+      it 'allows copying to gigs within same band via POST /gigs/:id/copy_to_gig' do
+        source_gig = create(:gig, name: 'Band B Source Gig', band: band_b)
+        target_gig_band_b = create(:gig, name: 'Band B Target Gig', band: band_b)
+        target_gig_band_a = create(:gig, name: 'Band A Target Gig', band: band_a)
+        song = create(:song, bands: [band_b])
+        create(:gig_song, gig: source_gig, song: song)
+
+        # Login with band_a as current band
+        login_as(user, band_a)
+
+        # Should be able to copy within same band (band_b to band_b)
+        post "/gigs/#{source_gig.id}/copy_to_gig", target_gig_id: target_gig_band_b.id
+        expect(last_response).to be_ok
+        response_data = JSON.parse(last_response.body)
+        expect(response_data['success']).to be true
+
+        # Should not be able to copy across different bands (band_b to band_a)
+        post "/gigs/#{source_gig.id}/copy_to_gig", target_gig_id: target_gig_band_a.id
+        expect(last_response).to be_ok
+        response_data = JSON.parse(last_response.body)
+        expect(response_data['error']).to eq('Cannot copy songs between different bands')
+      end
+    end
+
+    describe 'denies access to gigs from non-member bands' do
+      it 'raises RecordNotFound for gig from band user is not a member of via GET /gigs/:id' do
+        gig_from_other_band = create(:gig, name: 'Other Band Gig', band: other_band)
+
+        # Login as user (who is only in band_a and band_b)
+        login_as(user, band_a)
+
+        # Should not be able to access gig from other_band
+        expect {
+          get "/gigs/#{gig_from_other_band.id}"
+        }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+
+      it 'raises RecordNotFound for gig from band user is not a member of via GET /gigs/:id/edit' do
+        gig_from_other_band = create(:gig, name: 'Other Band Gig', band: other_band)
+
+        # Login as user (who is only in band_a and band_b)
+        login_as(user, band_a)
+
+        # Should not be able to edit gig from other_band
+        expect {
+          get "/gigs/#{gig_from_other_band.id}/edit"
+        }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+
+      it 'raises RecordNotFound for gig from band user is not a member of via PUT /gigs/:id' do
+        gig_from_other_band = create(:gig, name: 'Other Band Gig', band: other_band)
+
+        # Login as user (who is only in band_a and band_b)
+        login_as(user, band_a)
+
+        # Should not be able to update gig from other_band
+        expect {
+          put "/gigs/#{gig_from_other_band.id}", name: 'Updated Name'
+        }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+
+      it 'raises RecordNotFound for gig from band user is not a member of via DELETE /gigs/:id' do
+        gig_from_other_band = create(:gig, name: 'Other Band Gig', band: other_band)
+
+        # Login as user (who is only in band_a and band_b)
+        login_as(user, band_a)
+
+        # Should not be able to delete gig from other_band
+        expect {
+          delete "/gigs/#{gig_from_other_band.id}"
+        }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+
+      it 'raises RecordNotFound for utility routes with non-member band gig' do
+        gig_from_other_band = create(:gig, name: 'Other Band Gig', band: other_band)
+
+        # Login as user (who is only in band_a and band_b)
+        login_as(user, band_a)
+
+        # Print route
+        expect {
+          get "/gigs/#{gig_from_other_band.id}/print"
+        }.to raise_error(ActiveRecord::RecordNotFound)
+
+        # Gig mode route
+        expect {
+          get "/gigs/#{gig_from_other_band.id}/gig_mode"
+        }.to raise_error(ActiveRecord::RecordNotFound)
+
+        # Copy route
+        expect {
+          post "/gigs/#{gig_from_other_band.id}/copy"
+        }.to raise_error(ActiveRecord::RecordNotFound)
+
+        # Empty gigs route
+        expect {
+          get "/gigs/#{gig_from_other_band.id}/empty_gigs"
+        }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+    end
+
+    describe 'handles edge cases' do
+      it 'works for user with single band (existing behavior preserved)' do
+        single_band_user = create(:user)
+        single_band = create(:band, owner: single_band_user, name: 'Single Band')
+        gig = create(:gig, name: 'Single Band Gig', band: single_band)
+
+        login_as(single_band_user, single_band)
+
+        get "/gigs/#{gig.id}"
+        expect(last_response).to be_ok
+        expect(last_response.body).to include('Single Band Gig')
+      end
+
+      it 'redirects to login when user is not logged in' do
+        gig = create(:gig, name: 'Some Gig', band: band_a)
+
+        # Not logged in
+        get "/gigs/#{gig.id}"
+
+        expect(last_response).to be_redirect
+        expect(last_response.location).to end_with('/login')
+      end
+    end
+  end
+end
