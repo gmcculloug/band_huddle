@@ -364,6 +364,10 @@ obtain_certificate() {
         log "Certificate obtained successfully!"
     else
         error "Failed to obtain certificate"
+        error ""
+        error "NOTE: Let's Encrypt requires port 80 to be open and accessible from the internet."
+        error "If this is running behind a router or firewall, ensure port 80 is forwarded to this server."
+        error "Check your router/firewall port forwarding settings and try again."
         exit 1
     fi
 }
@@ -508,11 +512,17 @@ main() {
         create_temp_nginx_config
         start_temp_nginx
 
+        # Restore nginx config on any error after the temp swap
+        trap 'stop_temp_nginx' ERR EXIT
+
         # Give nginx time to start
         sleep 10
 
         obtain_certificate
         stop_temp_nginx
+
+        # Clear the trap now that we've cleanly restored
+        trap - ERR EXIT
         copy_certificates
         create_production_nginx_config
         create_renewal_script

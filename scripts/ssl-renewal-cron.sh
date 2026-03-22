@@ -29,6 +29,9 @@ if ./scripts/setup-letsencrypt-fedora.sh -d "$DOMAIN" -e "$EMAIL" -r; then
     log "SSL certificate renewal completed successfully"
 else
     log "ERROR: SSL certificate renewal failed"
+    log "NOTE: Let's Encrypt requires port 80 to be open and accessible from the internet."
+    log "If this server is behind a router or firewall, ensure port 80 is forwarded to this server."
+    log "Check your router/firewall port forwarding settings and try again."
     exit 1
 fi
 
