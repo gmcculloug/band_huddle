@@ -508,11 +508,17 @@ main() {
         create_temp_nginx_config
         start_temp_nginx
 
+        # Restore nginx config on any error after the temp swap
+        trap 'stop_temp_nginx' ERR EXIT
+
         # Give nginx time to start
         sleep 10
 
         obtain_certificate
         stop_temp_nginx
+
+        # Clear the trap now that we've cleanly restored
+        trap - ERR EXIT
         copy_certificates
         create_production_nginx_config
         create_renewal_script
