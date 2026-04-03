@@ -336,34 +336,29 @@ stop_temp_nginx() {
 
 # Obtain SSL certificate
 obtain_certificate() {
-    local staging_flag=""
     if [[ "$STAGING" == "true" ]]; then
-        staging_flag="--staging"
         warning "Using Let's Encrypt staging server (test certificates)"
     fi
 
-    # Build domain arguments for certbot
-    local domain_args=""
+    # Build certbot arguments as an array to avoid word-splitting/globbing
+    local certbot_args=(certonly --webroot -w "$WEBROOT_PATH")
     for domain in "${DOMAINS[@]}"; do
-        domain_args="$domain_args -d $domain"
+        certbot_args+=(-d "$domain")
     done
+    certbot_args+=(--email "$EMAIL" --agree-tos --non-interactive)
+    [[ "$STAGING" == "true" ]] && certbot_args+=(--staging)
 
     log "Obtaining SSL certificate for domains: ${DOMAINS[*]}..."
 
     # Obtain certificate using webroot
-    sudo certbot certonly \
-        --webroot \
-        -w "$WEBROOT_PATH" \
-        $domain_args \
-        --email "$EMAIL" \
-        --agree-tos \
-        --non-interactive \
-        $staging_flag
-
-    if [[ $? -eq 0 ]]; then
+    if sudo certbot "${certbot_args[@]}"; then
         log "Certificate obtained successfully!"
     else
         error "Failed to obtain certificate"
+        error ""
+        error "NOTE: Let's Encrypt requires port 80 to be open and accessible from the internet."
+        error "If this is running behind a router or firewall, ensure port 80 is forwarded to this server."
+        error "Check your router/firewall port forwarding settings and try again."
         exit 1
     fi
 }
@@ -506,6 +501,10 @@ main() {
         install_certbot
         setup_webroot
         create_temp_nginx_config
+
+        # Restore nginx config on any error after the temp swap (arm before start so failure is caught)
+        trap 'stop_temp_nginx' ERR EXIT
+
         start_temp_nginx
 
         # Restore nginx config on any error after the temp swap
