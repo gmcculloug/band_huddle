@@ -336,29 +336,22 @@ stop_temp_nginx() {
 
 # Obtain SSL certificate
 obtain_certificate() {
-    local staging_flag=""
     if [[ "$STAGING" == "true" ]]; then
-        staging_flag="--staging"
         warning "Using Let's Encrypt staging server (test certificates)"
     fi
 
-    # Build domain arguments for certbot
-    local domain_args=""
+    # Build certbot arguments as an array to avoid word-splitting/globbing
+    local certbot_args=(certonly --webroot -w "$WEBROOT_PATH")
     for domain in "${DOMAINS[@]}"; do
-        domain_args="$domain_args -d $domain"
+        certbot_args+=(-d "$domain")
     done
+    certbot_args+=(--email "$EMAIL" --agree-tos --non-interactive)
+    [[ "$STAGING" == "true" ]] && certbot_args+=(--staging)
 
     log "Obtaining SSL certificate for domains: ${DOMAINS[*]}..."
 
     # Obtain certificate using webroot
-    if sudo certbot certonly \
-        --webroot \
-        -w "$WEBROOT_PATH" \
-        $domain_args \
-        --email "$EMAIL" \
-        --agree-tos \
-        --non-interactive \
-        $staging_flag; then
+    if sudo certbot "${certbot_args[@]}"; then
         log "Certificate obtained successfully!"
     else
         error "Failed to obtain certificate"
@@ -508,10 +501,11 @@ main() {
         install_certbot
         setup_webroot
         create_temp_nginx_config
-        start_temp_nginx
 
-        # Restore nginx config on any error after the temp swap
+        # Restore nginx config on any error after the temp swap (arm before start so failure is caught)
         trap 'stop_temp_nginx' ERR EXIT
+
+        start_temp_nginx
 
         # Give nginx time to start
         sleep 10
