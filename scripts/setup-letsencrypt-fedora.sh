@@ -351,16 +351,14 @@ obtain_certificate() {
     log "Obtaining SSL certificate for domains: ${DOMAINS[*]}..."
 
     # Obtain certificate using webroot
-    sudo certbot certonly \
+    if sudo certbot certonly \
         --webroot \
         -w "$WEBROOT_PATH" \
         $domain_args \
         --email "$EMAIL" \
         --agree-tos \
         --non-interactive \
-        $staging_flag
-
-    if [[ $? -eq 0 ]]; then
+        $staging_flag; then
         log "Certificate obtained successfully!"
     else
         error "Failed to obtain certificate"
