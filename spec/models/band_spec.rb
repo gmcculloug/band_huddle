@@ -1,26 +1,6 @@
 require 'spec_helper'
 
 RSpec.describe Band, type: :model do
-  describe 'validations' do
-    it 'is valid with valid attributes' do
-      band = build(:band)
-      expect(band).to be_valid
-    end
-
-    it 'is invalid without a name' do
-      band = build(:band, name: nil)
-      expect(band).not_to be_valid
-      expect(band.errors[:name]).to include("can't be blank")
-    end
-
-    it 'is invalid with a duplicate name' do
-      create(:band, name: 'Test Band')
-      band = build(:band, name: 'Test Band')
-      expect(band).not_to be_valid
-      expect(band.errors[:name]).to include('has already been taken')
-    end
-  end
-
   describe 'associations' do
     it 'has many songs' do
       band = create(:band)

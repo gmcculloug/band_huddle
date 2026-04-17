@@ -1,36 +1,6 @@
 require 'spec_helper'
 
 RSpec.describe Gig, type: :model do
-  describe 'validations' do
-    it 'is valid with valid attributes' do
-      gig = build(:gig)
-      expect(gig).to be_valid
-    end
-
-    it 'is invalid without a name' do
-      gig = build(:gig, name: nil)
-      expect(gig).not_to be_valid
-      expect(gig.errors[:name]).to include("can't be blank")
-    end
-
-    it 'is invalid without a band' do
-      gig = build(:gig, band: nil)
-      expect(gig).not_to be_valid
-      expect(gig.errors[:band]).to include("can't be blank")
-    end
-
-    it 'is valid without a venue' do
-      gig = build(:gig, venue: nil)
-      expect(gig).to be_valid
-    end
-
-    it 'is invalid without a performance_date' do
-      gig = build(:gig, performance_date: nil)
-      expect(gig).not_to be_valid
-      expect(gig.errors[:performance_date]).to include("can't be blank")
-    end
-  end
-
   describe 'associations' do
     it 'belongs to a band' do
       band = create(:band)

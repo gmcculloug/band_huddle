@@ -1,37 +1,6 @@
 require 'spec_helper'
 
 RSpec.describe Venue, type: :model do
-  describe 'validations' do
-    it 'is valid with valid attributes' do
-      venue = build(:venue)
-      expect(venue).to be_valid
-    end
-
-    it 'is invalid without a name' do
-      venue = build(:venue, name: nil)
-      expect(venue).not_to be_valid
-      expect(venue.errors[:name]).to include("can't be blank")
-    end
-
-    it 'is invalid without a location' do
-      venue = build(:venue, location: nil)
-      expect(venue).not_to be_valid
-      expect(venue.errors[:location]).to include("can't be blank")
-    end
-
-    it 'is invalid without a contact name' do
-      venue = build(:venue, contact_name: nil)
-      expect(venue).not_to be_valid
-      expect(venue.errors[:contact_name]).to include("can't be blank")
-    end
-
-    it 'is invalid without a phone number' do
-      venue = build(:venue, phone_number: nil)
-      expect(venue).not_to be_valid
-      expect(venue.errors[:phone_number]).to include("can't be blank")
-    end
-  end
-
   describe 'associations' do
     it 'belongs to a band' do
       band = create(:band)

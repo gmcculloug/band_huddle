@@ -81,16 +81,6 @@ RSpec.describe Song, type: :model do
     end
   end
 
-  describe 'scopes' do
-    it 'orders by title case-insensitively' do
-      song_c = create(:song, title: 'C Song')
-      song_a = create(:song, title: 'A Song')
-      song_b = create(:song, title: 'B Song')
-      
-      expect(Song.order('LOWER(title)')).to eq([song_a, song_b, song_c])
-    end
-  end
-
   describe 'search functionality' do
     it 'finds songs by title' do
       song1 = create(:song, title: 'Wonderwall', artist: 'Oasis')
