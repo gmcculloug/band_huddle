@@ -205,6 +205,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_26_131912) do
     t.boolean "practice_state", default: false, null: false
     t.datetime "practice_state_updated_at", precision: nil
     t.bigint "song_id", null: false
+    t.string "transposed_key", limit: 10
+    t.integer "transposition_semitones", default: 0
     t.index ["band_id", "practice_state"], name: "index_songs_bands_on_band_id_and_practice_state"
     t.index ["band_id"], name: "index_songs_bands_on_band_id"
     t.index ["practice_state"], name: "index_songs_bands_on_practice_state"

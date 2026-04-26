@@ -13,7 +13,7 @@ class Band < ActiveRecord::Base
   
   validates :name, presence: true
   validates :name, uniqueness: true
-  validates :timezone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }, allow_nil: true
+  validates :timezone, inclusion: { in: ActiveSupport::TimeZone.all.flat_map { |tz| [tz.name, tz.tzinfo.name] } }, allow_nil: true
   validates :google_calendar_id, presence: true, if: :google_calendar_enabled?
 
   before_save :generate_slug
