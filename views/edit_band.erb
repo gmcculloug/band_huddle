@@ -25,7 +25,7 @@
 
             <div style="margin-bottom: 20px;">
                 <label for="band_name" style="display: block; margin-bottom: 5px; font-weight: bold;">Band Name *</label>
-                <input type="text" id="band_name" name="band[name]" value="<%= @band.name %>" required autofocus style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
+                <input type="text" id="band_name" name="band[name]" value="<%= h(@band.name) %>" required autofocus style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
             </div>
 
             <div style="margin-bottom: 20px;">
@@ -389,7 +389,7 @@
                 <button type="submit"
                         class="btn btn-danger"
                         style="background: #dc2626; border-color: #dc2626; font-weight: bold;"
-                        onclick="return confirm('Are you absolutely sure you want to delete this band?\n\nThis action cannot be undone and will permanently delete:\n• All songs and set lists\n• All gig information\n• All member associations\n• Google Calendar sync data\n\nType the band name to confirm: <%= @band.name %>')">
+                        onclick="return confirm('Are you absolutely sure you want to delete this band?\n\nThis action cannot be undone and will permanently delete:\n• All songs and set lists\n• All gig information\n• All member associations\n• Google Calendar sync data\n\nType the band name to confirm: <%= h(@band.name) %>')">
                     🗑️ Delete Band Permanently
                 </button>
             </form>

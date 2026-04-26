@@ -1,6 +1,6 @@
 <div class="card">
     <div class="header">
-        <h1>🎸 <%= @band.name %></h1>
+        <h1>🎸 <%= h(@band.name) %></h1>
         <p>Upcoming Shows & Performances</p>
     </div>
     
@@ -14,7 +14,7 @@
                         <div class="weekday"><%= gig.performance_date.strftime('%A') %></div>
                     </div>
                     <div class="gig-details">
-                        <div class="gig-name"><%= gig.name %></div>
+                        <div class="gig-name"><%= h(gig.name) %></div>
                         <% if gig.start_time %>
                             <% local_start = gig.start_time.in_time_zone(@band.band_timezone) %>
                             <div class="gig-time">
@@ -27,9 +27,9 @@
                         <% end %>
                         <% if gig.venue %>
                             <div class="gig-venue">
-                                📍 <span class="venue-name"><%= gig.venue.name %></span>
+                                📍 <span class="venue-name"><%= h(gig.venue.name) %></span>
                                 <% if gig.venue.location %>
-                                    <span class="venue-location"> — <%= gig.venue.location %></span>
+                                    <span class="venue-location"> — <%= h(gig.venue.location) %></span>
                                 <% end %>
                             </div>
                         <% end %>

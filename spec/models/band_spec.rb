@@ -58,10 +58,18 @@ RSpec.describe Band, type: :model do
       expect(band.slug).to eq('band-friends')
     end
 
-    it 'regenerates the slug when the name changes' do
+    it 'preserves the slug when the name changes' do
       band = create(:band, name: 'Old Name')
       band.update!(name: 'New Name')
-      expect(band.slug).to eq('new-name')
+      expect(band.slug).to eq('old-name')
+    end
+
+    it 'is invalid when slug is not unique' do
+      create(:band, name: 'Original Band')
+      duplicate = build(:band, name: 'Another Band')
+      duplicate.slug = 'original-band'
+      expect(duplicate).not_to be_valid
+      expect(duplicate.errors[:slug]).to be_present
     end
   end
 

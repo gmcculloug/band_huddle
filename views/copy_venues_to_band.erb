@@ -17,7 +17,7 @@
                     <input type="checkbox" id="select-all" onchange="selectAll()" style="margin-right: 8px; transform: scale(1.2);">
                     Select All (<span id="selected-count">0</span> selected)
                 </label>
-                <button type="submit" id="copy-button" class="btn btn-success" data-band-name="<%= @band.name %>" disabled>
+                <button type="submit" id="copy-button" class="btn btn-success" data-band-name="<%= h(@band.name) %>" disabled>
                     Select venues to copy
                 </button>
             </div>

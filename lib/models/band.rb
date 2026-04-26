@@ -14,9 +14,10 @@ class Band < ActiveRecord::Base
   validates :name, presence: true
   validates :name, uniqueness: true
   validates :timezone, inclusion: { in: ActiveSupport::TimeZone.all.flat_map { |tz| [tz.name, tz.tzinfo.name] } }, allow_nil: true
+  validates :slug, uniqueness: true, allow_nil: true
   validates :google_calendar_id, presence: true, if: :google_calendar_enabled?
 
-  before_save :generate_slug
+  before_save :generate_slug, if: -> { new_record? || slug.blank? }
 
   def google_calendar_enabled?
     read_attribute(:google_calendar_enabled) == true
@@ -75,8 +76,8 @@ class Band < ActiveRecord::Base
 
   private
 
-  # Regenerates slug from name on every save. Changing a band name will update
-  # the slug, which silently breaks any previously shared public schedule URLs.
+  # Generates slug on create or when slug is blank (e.g. backfilled records).
+  # Slug is intentionally left unchanged on updates to preserve public URLs.
   def generate_slug
     self.slug = name.parameterize if name.present?
   end

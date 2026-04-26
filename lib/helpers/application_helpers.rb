@@ -2,6 +2,11 @@ require_relative 'icon_helpers'
 
 module ApplicationHelpers
   include IconHelpers
+
+  def h(text)
+    Rack::Utils.escape_html(text.to_s)
+  end
+
   # Authentication helpers
   def current_user
     # Return cached user if already loaded
