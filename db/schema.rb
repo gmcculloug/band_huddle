@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_14_193204) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_26_124618) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,11 +22,15 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_14_193204) do
     t.string "name", null: false
     t.text "notes"
     t.bigint "owner_id"
+    t.boolean "public_schedule_enabled", default: false
+    t.string "slug"
     t.datetime "updated_at", null: false
     t.index ["google_calendar_enabled"], name: "index_bands_on_google_calendar_enabled"
     t.index ["google_calendar_id"], name: "index_bands_on_google_calendar_id"
     t.index ["name"], name: "index_bands_on_name", unique: true
     t.index ["owner_id"], name: "index_bands_on_owner_id"
+    t.index ["public_schedule_enabled"], name: "index_bands_on_public_schedule_enabled"
+    t.index ["slug"], name: "index_bands_on_slug", unique: true
   end
 
   create_table "blackout_dates", force: :cascade do |t|

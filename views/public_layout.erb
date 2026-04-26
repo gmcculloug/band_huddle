@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= @band ? @band.name : 'Schedule' %> - Band Huddle</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #111827;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .powered-by {
+            background: #374151;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #d1d5db;
+        }
+
+        .powered-by a {
+            color: #d1d5db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .powered-by a:hover {
+            color: #ffffff;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .gig-item {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.2s;
+        }
+        
+        .gig-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gig-date {
+            flex-shrink: 0;
+            text-align: center;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            min-width: 80px;
+        }
+        
+        .gig-date .month {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .gig-date .day {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        .gig-date .weekday {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        
+        .gig-details {
+            flex: 1;
+        }
+        
+        .gig-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .gig-time {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .gig-venue {
+            color: #475569;
+            font-size: 0.95rem;
+        }
+        
+        .venue-name {
+            font-weight: 500;
+        }
+        
+        .venue-location {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+        
+        .no-gigs {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+        
+        .no-gigs-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 600px) {
+            .gig-item {
+                flex-direction: column;
+            }
+            
+            .gig-date {
+                flex-direction: row;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: flex-start;
+            }
+            
+            .gig-date .day {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <%= yield %>
+        <div class="powered-by">
+            Powered by <a href="/">Band Huddle</a>
+        </div>
+    </div>
+</body>
+</html>

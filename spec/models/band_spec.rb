@@ -37,6 +37,46 @@ RSpec.describe Band, type: :model do
     end
   end
 
+  describe 'slug generation' do
+    it 'generates a slug from the name on create' do
+      band = create(:band, name: 'The Rolling Stones')
+      expect(band.slug).to eq('the-rolling-stones')
+    end
+
+    it 'converts spaces to hyphens' do
+      band = create(:band, name: 'My Cool Band')
+      expect(band.slug).to eq('my-cool-band')
+    end
+
+    it 'lowercases the slug' do
+      band = create(:band, name: 'UPPERCASE BAND')
+      expect(band.slug).to eq('uppercase-band')
+    end
+
+    it 'strips special characters' do
+      band = create(:band, name: 'Band & Friends!')
+      expect(band.slug).to eq('band-friends')
+    end
+
+    it 'regenerates the slug when the name changes' do
+      band = create(:band, name: 'Old Name')
+      band.update!(name: 'New Name')
+      expect(band.slug).to eq('new-name')
+    end
+  end
+
+  describe '#public_schedule_enabled?' do
+    it 'returns false by default' do
+      band = create(:band)
+      expect(band.public_schedule_enabled?).to be false
+    end
+
+    it 'returns true when enabled' do
+      band = create(:band, public_schedule_enabled: true)
+      expect(band.public_schedule_enabled?).to be true
+    end
+  end
+
   describe 'destruction' do
     it 'can be destroyed when it has no associated records' do
       band = create(:band)

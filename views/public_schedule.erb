@@ -1,0 +1,45 @@
+<div class="card">
+    <div class="header">
+        <h1>🎸 <%= @band.name %></h1>
+        <p>Upcoming Shows & Performances</p>
+    </div>
+    
+    <div class="content">
+        <% if @upcoming_gigs.any? %>
+            <% @upcoming_gigs.each do |gig| %>
+                <div class="gig-item">
+                    <div class="gig-date">
+                        <div class="month"><%= gig.performance_date.strftime('%b') %></div>
+                        <div class="day"><%= gig.performance_date.day %></div>
+                        <div class="weekday"><%= gig.performance_date.strftime('%A') %></div>
+                    </div>
+                    <div class="gig-details">
+                        <div class="gig-name"><%= gig.name %></div>
+                        <% if gig.start_time %>
+                            <div class="gig-time">
+                                🕐 <%= gig.start_time.strftime('%I:%M %p') %>
+                                <% if gig.end_time %>
+                                    - <%= gig.end_time.strftime('%I:%M %p') %>
+                                <% end %>
+                            </div>
+                        <% end %>
+                        <% if gig.venue %>
+                            <div class="gig-venue">
+                                📍 <span class="venue-name"><%= gig.venue.name %></span>
+                                <% if gig.venue.location %>
+                                    <span class="venue-location"> — <%= gig.venue.location %></span>
+                                <% end %>
+                            </div>
+                        <% end %>
+                    </div>
+                </div>
+            <% end %>
+        <% else %>
+            <div class="no-gigs">
+                <div class="no-gigs-icon">🎵</div>
+                <p>No upcoming shows scheduled.</p>
+                <p style="font-size: 0.9rem; margin-top: 10px;">Check back soon for updates!</p>
+            </div>
+        <% end %>
+    </div>
+</div>

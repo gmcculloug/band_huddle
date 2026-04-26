@@ -204,7 +204,68 @@
         </form>
     </div>
 
+    <!-- Public Schedule Section -->
+    <div class="card" style="margin-top: 30px; border: 1px solid #10b981; background: #f0fdf4;">
+        <h3>🌐 Public Schedule</h3>
+        <p style="color: #666; margin-bottom: 20px;">
+            Make your band's upcoming gigs visible to fans and followers without requiring them to log in.
+        </p>
+
+        <% if @public_schedule_error %>
+            <div class="errors" style="margin-bottom: 20px;">
+                <p><%= @public_schedule_error %></p>
+            </div>
+        <% end %>
+
+        <% if @public_schedule_success %>
+            <div class="success" style="margin-bottom: 20px;">
+                <p><%= @public_schedule_success %></p>
+            </div>
+        <% end %>
+
+        <form method="POST" action="/bands/<%= @band.id %>/public_schedule_settings">
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <input type="checkbox" 
+                           name="public_schedule_enabled" 
+                           value="1" 
+                           <%= 'checked' if @band.public_schedule_enabled? %>
+                           onchange="togglePublicScheduleInfo(this)">
+                    <span style="font-weight: bold;">Enable Public Schedule</span>
+                </label>
+                <p style="color: #666; margin-left: 30px; margin-bottom: 15px;">
+                    When enabled, your upcoming gigs will be visible to anyone at:<br>
+                    <strong id="public-url" style="word-break: break-all;">https://bandhuddle.com/schedule/<%= @band.slug %></strong>
+                </p>
+            </div>
+
+            <div id="public-schedule-info" style="<%= 'display: none;' unless @band.public_schedule_enabled? %> background: #d1fae5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px 0; font-weight: 500; color: #065f46;">📋 What fans will see:</p>
+                <ul style="margin: 0; padding-left: 20px; color: #065f46;">
+                    <li>Band name and upcoming gig dates</li>
+                    <li>Performance times (if set)</li>
+                    <li>Venue names and locations</li>
+                </ul>
+                <p style="margin: 10px 0 0 0; font-size: 0.9rem; color: #047857;">
+                    <strong>What's NOT shared:</strong> Internal notes, song lists, member information, and any other band data.
+                </p>
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="btn btn-success">Save Public Schedule Settings</button>
+            </div>
+        </form>
+    </div>
+
     <script>
+        function togglePublicScheduleInfo(checkbox) {
+            const infoDiv = document.getElementById('public-schedule-info');
+            if (checkbox.checked) {
+                infoDiv.style.display = 'block';
+            } else {
+                infoDiv.style.display = 'none';
+            }
+        }
         function toggleCalendarFields(checkbox) {
             const fields = document.getElementById('calendar-fields');
             const calendarIdField = document.getElementById('google_calendar_id');

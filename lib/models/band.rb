@@ -15,8 +15,14 @@ class Band < ActiveRecord::Base
   validates :name, uniqueness: true
   validates :google_calendar_id, presence: true, if: :google_calendar_enabled?
 
+  before_save :generate_slug
+
   def google_calendar_enabled?
     read_attribute(:google_calendar_enabled) == true
+  end
+
+  def public_schedule_enabled?
+    read_attribute(:public_schedule_enabled) == true
   end
   
   def owner?
@@ -60,5 +66,13 @@ class Band < ActiveRecord::Base
   def test_google_calendar_connection
     return { success: false, error: 'Google Calendar not enabled' } unless google_calendar_enabled?
     google_calendar_service.test_connection
+  end
+
+  private
+
+  # Regenerates slug from name on every save. Changing a band name will update
+  # the slug, which silently breaks any previously shared public schedule URLs.
+  def generate_slug
+    self.slug = name.parameterize if name.present?
   end
 end
