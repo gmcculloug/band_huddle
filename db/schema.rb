@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_26_124618) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_26_131912) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -24,6 +24,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_26_124618) do
     t.bigint "owner_id"
     t.boolean "public_schedule_enabled", default: false
     t.string "slug"
+    t.string "timezone", default: "UTC"
     t.datetime "updated_at", null: false
     t.index ["google_calendar_enabled"], name: "index_bands_on_google_calendar_enabled"
     t.index ["google_calendar_id"], name: "index_bands_on_google_calendar_id"

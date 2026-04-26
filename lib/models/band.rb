@@ -13,6 +13,7 @@ class Band < ActiveRecord::Base
   
   validates :name, presence: true
   validates :name, uniqueness: true
+  validates :timezone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }, allow_nil: true
   validates :google_calendar_id, presence: true, if: :google_calendar_enabled?
 
   before_save :generate_slug
@@ -23,6 +24,10 @@ class Band < ActiveRecord::Base
 
   def public_schedule_enabled?
     read_attribute(:public_schedule_enabled) == true
+  end
+
+  def band_timezone
+    timezone.presence || 'UTC'
   end
   
   def owner?

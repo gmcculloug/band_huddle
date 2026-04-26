@@ -34,6 +34,36 @@
                 <small style="color: #666;">Optional notes about the band, members, style, etc.</small>
             </div>
 
+            <div style="margin-bottom: 20px;">
+                <label for="band_timezone" style="display: block; margin-bottom: 5px; font-weight: bold;">Timezone</label>
+                <select id="band_timezone" name="band[timezone]" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
+                    <% common_timezones = [
+                        'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+                        'America/Phoenix', 'America/Anchorage', 'Pacific/Honolulu',
+                        'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome',
+                        'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata', 'Australia/Sydney',
+                        'UTC'
+                    ] %>
+                    <optgroup label="Common Timezones">
+                        <% common_timezones.each do |tz| %>
+                            <option value="<%= tz %>" <%= 'selected' if @band.band_timezone == tz %>>
+                                <%= tz.gsub('_', ' ') %> (<%= Time.now.in_time_zone(tz).strftime('%Z %:z') %>)
+                            </option>
+                        <% end %>
+                    </optgroup>
+                    <optgroup label="All Timezones">
+                        <% ActiveSupport::TimeZone.all.each do |tz| %>
+                            <% unless common_timezones.include?(tz.name) %>
+                                <option value="<%= tz.name %>" <%= 'selected' if @band.band_timezone == tz.name %>>
+                                    <%= tz.name.gsub('_', ' ') %> (<%= tz.formatted_offset %>)
+                                </option>
+                            <% end %>
+                        <% end %>
+                    </optgroup>
+                </select>
+                <small style="color: #666;">Used to display gig times correctly on your public schedule page.</small>
+            </div>
+
             <%= erb :_form_actions, locals: { submit_text: 'Update Band', cancel_url: "/bands/#{@band.id}" } %>
         </form>
     </div>
