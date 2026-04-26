@@ -51,6 +51,7 @@ require_relative 'lib/routes/calendar'
 require_relative 'lib/routes/practices'
 require_relative 'lib/routes/api'
 require_relative 'lib/routes/mobile_api'
+require_relative 'lib/routes/public_schedule'
 
 enable :static
 use Rack::MethodOverride
@@ -128,6 +129,7 @@ use Routes::Calendar
 use Routes::Practices
 use Routes::Api
 use Routes::MobileAPI
+use Routes::PublicSchedule
 
 # Account creation code for user registration (required)
 # Set BAND_HUDDLE_ACCT_CREATION_SECRET environment variable to enable account creation

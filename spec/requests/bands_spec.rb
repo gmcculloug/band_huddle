@@ -401,4 +401,40 @@ RSpec.describe 'Bands API', type: :request do
       end
     end
   end
+
+  describe 'Public Schedule Settings' do
+    describe 'POST /bands/:id/public_schedule_settings' do
+      it 'enables the public schedule' do
+        login_as(user, band)
+
+        post "/bands/#{band.id}/public_schedule_settings", { public_schedule_enabled: '1' }
+
+        expect(last_response).to be_ok
+        expect(last_response.body).to include('Public schedule settings updated successfully')
+        band.reload
+        expect(band.public_schedule_enabled).to be true
+      end
+
+      it 'disables the public schedule' do
+        band.update!(public_schedule_enabled: true)
+        login_as(user, band)
+
+        post "/bands/#{band.id}/public_schedule_settings", {}
+
+        expect(last_response).to be_ok
+        band.reload
+        expect(band.public_schedule_enabled).to be false
+      end
+
+      it 'requires band membership' do
+        other_user = create(:user)
+        other_band = create(:band, owner: other_user)
+        login_as(other_user, other_band)
+
+        expect {
+          post "/bands/#{band.id}/public_schedule_settings", { public_schedule_enabled: '1' }
+        }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+    end
+  end
 end 

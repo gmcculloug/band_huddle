@@ -465,4 +465,27 @@ class Routes::Bands < Sinatra::Base
       { success: false, error: e.message, synced_count: 0, total_count: 0 }.to_json
     end
   end
+
+  # ============================================================================
+  # PUBLIC SCHEDULE SETTINGS ROUTES
+  # ============================================================================
+
+  post '/bands/:id/public_schedule_settings' do
+    require_login
+    @band = user_bands.includes(:user_bands, :owners).find(params[:id])
+    @user_bands_by_user_id = @band.user_bands.index_by(&:user_id)
+
+    # Any band member can configure public schedule settings
+    unless @band.users.include?(current_user)
+      @public_schedule_error = "You must be a member of this band to configure public schedule settings"
+      return erb :edit_band
+    end
+
+    public_schedule_enabled = params[:public_schedule_enabled] == '1'
+
+    @band.update!(public_schedule_enabled: public_schedule_enabled)
+
+    @public_schedule_success = "Public schedule settings updated successfully"
+    erb :edit_band
+  end
 end

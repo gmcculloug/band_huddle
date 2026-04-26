@@ -1,0 +1,47 @@
+<div class="card">
+    <div class="header">
+        <h1>🎸 <%= h(@band.name) %></h1>
+        <p>Upcoming Shows & Performances</p>
+    </div>
+    
+    <div class="content">
+        <% if @upcoming_gigs.any? %>
+            <% @upcoming_gigs.each do |gig| %>
+                <div class="gig-item">
+                    <div class="gig-date">
+                        <div class="month"><%= gig.performance_date.strftime('%b') %></div>
+                        <div class="day"><%= gig.performance_date.day %></div>
+                        <div class="weekday"><%= gig.performance_date.strftime('%A') %></div>
+                    </div>
+                    <div class="gig-details">
+                        <div class="gig-name"><%= h(gig.name) %></div>
+                        <% if gig.start_time %>
+                            <% local_start = gig.start_time.in_time_zone(@band.band_timezone) %>
+                            <div class="gig-time">
+                                🕐 <%= local_start.strftime('%I:%M %p') %>
+                                <% if gig.end_time %>
+                                    - <%= gig.end_time.in_time_zone(@band.band_timezone).strftime('%I:%M %p') %>
+                                <% end %>
+                                <span style="font-size: 0.85em; color: #94a3b8;"><%= local_start.strftime('%Z') %></span>
+                            </div>
+                        <% end %>
+                        <% if gig.venue %>
+                            <div class="gig-venue">
+                                📍 <span class="venue-name"><%= h(gig.venue.name) %></span>
+                                <% if gig.venue.location %>
+                                    <span class="venue-location"> — <%= h(gig.venue.location) %></span>
+                                <% end %>
+                            </div>
+                        <% end %>
+                    </div>
+                </div>
+            <% end %>
+        <% else %>
+            <div class="no-gigs">
+                <div class="no-gigs-icon">🎵</div>
+                <p>No upcoming shows scheduled.</p>
+                <p style="font-size: 0.9rem; margin-top: 10px;">Check back soon for updates!</p>
+            </div>
+        <% end %>
+    </div>
+</div>

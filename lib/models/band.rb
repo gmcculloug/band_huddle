@@ -13,10 +13,22 @@ class Band < ActiveRecord::Base
   
   validates :name, presence: true
   validates :name, uniqueness: true
+  validates :timezone, inclusion: { in: ActiveSupport::TimeZone.all.flat_map { |tz| [tz.name, tz.tzinfo.name] } }, allow_nil: true
+  validates :slug, uniqueness: true, allow_nil: true
   validates :google_calendar_id, presence: true, if: :google_calendar_enabled?
+
+  before_save :generate_slug, if: -> { new_record? || slug.blank? }
 
   def google_calendar_enabled?
     read_attribute(:google_calendar_enabled) == true
+  end
+
+  def public_schedule_enabled?
+    read_attribute(:public_schedule_enabled) == true
+  end
+
+  def band_timezone
+    timezone.presence || 'UTC'
   end
   
   def owner?
@@ -60,5 +72,13 @@ class Band < ActiveRecord::Base
   def test_google_calendar_connection
     return { success: false, error: 'Google Calendar not enabled' } unless google_calendar_enabled?
     google_calendar_service.test_connection
+  end
+
+  private
+
+  # Generates slug on create or when slug is blank (e.g. backfilled records).
+  # Slug is intentionally left unchanged on updates to preserve public URLs.
+  def generate_slug
+    self.slug = name.parameterize if name.present?
   end
 end
