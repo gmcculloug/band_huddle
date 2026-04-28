@@ -2,7 +2,7 @@
 
 <%= erb :_errors %>
 
-<form method="POST" action="/gigs" class="card" aria-labelledby="new-gig-heading" novalidate>
+<form id="gig-form" method="POST" action="/gigs" class="card" aria-labelledby="new-gig-heading" novalidate>
     <div class="form-group">
         <label for="gig_venue_id">Venue</label>
         <select id="gig_venue_id" name="venue_id" autofocus>
@@ -241,19 +241,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Form submission - convert display values to 24-hour format
-    document.querySelector('form').addEventListener('submit', function() {
+    // Form submission - convert local time + date to UTC ISO string
+    document.getElementById('gig-form').addEventListener('submit', function() {
         const startTime24 = startTimeInput.getAttribute('data-time');
         const endTime24 = endTimeInput.getAttribute('data-time');
+        const perfDate = document.getElementById('gig_performance_date').value;
 
-        if (startTime24) {
-            startTimeInput.name = 'start_time';
-            startTimeInput.value = startTime24;
+        if (startTime24 && perfDate) {
+            const [hours, minutes] = startTime24.split(':').map(Number);
+            const [year, month, day] = perfDate.split('-').map(Number);
+            // Build date in local timezone to avoid UTC date-shift for western timezones
+            const startDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
+            startTimeInput.value = startDateTime.toISOString();
+        } else {
+            startTimeInput.value = '';
         }
 
-        if (endTime24) {
-            endTimeInput.name = 'end_time';
-            endTimeInput.value = endTime24;
+        if (endTime24 && perfDate) {
+            const [hours, minutes] = endTime24.split(':').map(Number);
+            const [year, month, day] = perfDate.split('-').map(Number);
+            const endDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
+            endTimeInput.value = endDateTime.toISOString();
+        } else {
+            endTimeInput.value = '';
         }
     });
 

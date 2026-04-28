@@ -8,7 +8,7 @@
 
 <%= erb :_errors %>
 
-<form method="POST" action="/gigs/<%= @gig.id %>" class="card">
+<form id="gig-form" method="POST" action="/gigs/<%= @gig.id %>" class="card">
     <input type="hidden" name="_method" value="PUT">
     
     <div class="form-group">
@@ -51,8 +51,7 @@
                     </div>
                     <div class="time-input-row">
                         <input type="text" id="gig_start_time" name="start_time" placeholder="Select start time..." readonly
-                               data-time="<%= @gig.start_time&.strftime('%H:%M') %>"
-                               value="<%= @gig.start_time&.strftime('%-l:%M %p') if @gig.start_time %>">
+                               data-utc="<%= @gig.start_time&.utc&.iso8601 %>">
                         <select id="gig_duration" name="duration" class="duration-selector">
                             <option value="">Duration</option>
                             <option value="60">1 hour</option>
@@ -73,8 +72,7 @@
     <div class="form-group" id="end-time-group" style="display: none;">
         <label for="gig_end_time">End Time</label>
         <input type="text" id="gig_end_time" name="end_time" placeholder="Select end time..." readonly
-               data-time="<%= @gig.end_time&.strftime('%H:%M') %>"
-               value="<%= @gig.end_time&.strftime('%-l:%M %p') if @gig.end_time %>">
+               data-utc="<%= @gig.end_time&.utc&.iso8601 %>">
     </div>
 
     <div class="form-group">
@@ -105,15 +103,24 @@ document.addEventListener('DOMContentLoaded', function() {
         previousVenueName = initialSelectedOption.dataset.venueName;
     }
 
+    // Convert stored UTC to local time for Flatpickr initialization
+    function utcAttrToLocalDate(el) {
+        const utc = el.getAttribute('data-utc');
+        if (!utc) return null;
+        const d = new Date(utc);
+        el.setAttribute('data-time', d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0'));
+        return d;
+    }
+
     // Initialize Flatpickr for time inputs
-    const startTime24 = startTimeInput.getAttribute('data-time');
+    const startLocalDate = utcAttrToLocalDate(startTimeInput);
     startTimePicker = flatpickr(startTimeInput, {
         enableTime: true,
         noCalendar: true,
         dateFormat: "h:i K",
         time_24hr: false,
         minuteIncrement: 15,
-        defaultDate: startTime24 ? convertTo12Hour(startTime24) : null,
+        defaultDate: startLocalDate,
         onChange: function(selectedDates, dateStr) {
             // Update data-time attribute in real-time
             if (selectedDates.length > 0) {
@@ -146,14 +153,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    const endTime24 = endTimeInput.getAttribute('data-time');
+    const endLocalDate = utcAttrToLocalDate(endTimeInput);
     endTimePicker = flatpickr(endTimeInput, {
         enableTime: true,
         noCalendar: true,
         dateFormat: "h:i K",
         time_24hr: false,
         minuteIncrement: 15,
-        defaultDate: endTime24 ? convertTo12Hour(endTime24) : null,
+        defaultDate: endLocalDate,
         onClose: function(selectedDates, dateStr) {
             // Store as 24-hour format for form submission
             if (selectedDates.length > 0) {
@@ -226,29 +233,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Form submission - convert display values to 24-hour format
-    document.querySelector('form').addEventListener('submit', function() {
+    // Form submission - convert local time + date to UTC ISO string
+    document.getElementById('gig-form').addEventListener('submit', function() {
         const startTime24 = startTimeInput.getAttribute('data-time');
         const endTime24 = endTimeInput.getAttribute('data-time');
+        const perfDate = document.getElementById('gig_performance_date').value;
 
-        if (startTime24) {
-            startTimeInput.name = 'start_time';
-            startTimeInput.value = startTime24;
+        if (startTime24 && perfDate) {
+            const [hours, minutes] = startTime24.split(':').map(Number);
+            const [year, month, day] = perfDate.split('-').map(Number);
+            // Build date in local timezone to avoid UTC date-shift for western timezones
+            const startDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
+            startTimeInput.value = startDateTime.toISOString();
+        } else {
+            startTimeInput.value = '';
         }
 
-        if (endTime24) {
-            endTimeInput.name = 'end_time';
-            endTimeInput.value = endTime24;
+        if (endTime24 && perfDate) {
+            const [hours, minutes] = endTime24.split(':').map(Number);
+            const [year, month, day] = perfDate.split('-').map(Number);
+            const endDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
+            endTimeInput.value = endDateTime.toISOString();
+        } else {
+            endTimeInput.value = '';
         }
     });
-
-    function convertTo12Hour(time24) {
-        if (!time24) return null;
-        const [hours, minutes] = time24.split(':');
-        const date = new Date();
-        date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        return date;
-    }
 
     function initializeFormState() {
         const startTime24 = startTimeInput.getAttribute('data-time');

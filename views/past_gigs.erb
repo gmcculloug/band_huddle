@@ -51,11 +51,10 @@
                             <%= set_list.name %>
                             <% if set_list.start_time.present? %>
                                 <span style="font-weight: normal; color: #718096; font-size: 0.9em;">
-                                    - <%= set_list.start_time.strftime('%I:%M %p') %>
+                                    - <span class="local-time" data-utc="<%= set_list.start_time.utc.iso8601 %>"><%= set_list.start_time.utc.strftime('%I:%M %p UTC') %></span>
                                     <% if set_list.end_time.present? %>
-                                        - <%= set_list.end_time.strftime('%I:%M %p') %>
+                                        - <span class="local-time" data-utc="<%= set_list.end_time.utc.iso8601 %>"><%= set_list.end_time.utc.strftime('%I:%M %p UTC') %></span>
                                     <% end %>
-                                    <span style="font-size: 0.85em; color: #94a3b8;"><%= Time.now.in_time_zone(current_band.band_timezone).strftime('%Z') %></span>
                                 </span>
                             <% end %>
                         </span>

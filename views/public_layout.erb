@@ -180,5 +180,15 @@
             Powered by <a href="/">Band Huddle</a>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.local-time').forEach(function(el) {
+                var d = new Date(el.dataset.utc);
+                el.textContent = d.toLocaleTimeString('en-US', {
+                    hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+                });
+            });
+        });
+    </script>
 </body>
 </html>

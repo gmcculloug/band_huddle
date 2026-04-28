@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_26_131912) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_26_165312) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -66,11 +66,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_26_131912) do
   create_table "gigs", force: :cascade do |t|
     t.integer "band_id", null: false
     t.datetime "created_at", null: false
-    t.time "end_time"
+    t.datetime "end_time"
     t.string "name", null: false
     t.text "notes"
     t.date "performance_date"
-    t.time "start_time"
+    t.datetime "start_time"
     t.datetime "updated_at", null: false
     t.integer "venue_id"
     t.index ["band_id", "performance_date"], name: "index_gigs_on_band_id_and_performance_date"

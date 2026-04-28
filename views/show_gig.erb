@@ -102,14 +102,14 @@
             <% end %>
             <% if @gig.start_time.present? %>
                 <div class="detail-item">
-                    <span class="detail-label">Start Time:</span> <%= @gig.start_time.strftime('%I:%M %p') %>
-                    <span style="font-size: 0.85em; color: #94a3b8;"><%= Time.now.in_time_zone(current_band.band_timezone).strftime('%Z') %></span>
+                    <span class="detail-label">Start Time:</span>
+                    <span class="local-time" data-utc="<%= @gig.start_time.utc.iso8601 %>"><%= @gig.start_time.utc.strftime('%I:%M %p UTC') %></span>
                 </div>
             <% end %>
             <% if @gig.end_time.present? %>
                 <div class="detail-item">
-                    <span class="detail-label">End Time:</span> <%= @gig.end_time.strftime('%I:%M %p') %>
-                    <span style="font-size: 0.85em; color: #94a3b8;"><%= Time.now.in_time_zone(current_band.band_timezone).strftime('%Z') %></span>
+                    <span class="detail-label">End Time:</span>
+                    <span class="local-time" data-utc="<%= @gig.end_time.utc.iso8601 %>"><%= @gig.end_time.utc.strftime('%I:%M %p UTC') %></span>
                 </div>
             <% end %>
         </div>

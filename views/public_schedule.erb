@@ -16,13 +16,11 @@
                     <div class="gig-details">
                         <div class="gig-name"><%= h(gig.name) %></div>
                         <% if gig.start_time %>
-                            <% local_start = gig.start_time.in_time_zone(@band.band_timezone) %>
                             <div class="gig-time">
-                                🕐 <%= local_start.strftime('%I:%M %p') %>
+                                🕐 <span class="local-time" data-utc="<%= gig.start_time.utc.iso8601 %>"><%= gig.start_time.utc.strftime('%I:%M %p UTC') %></span>
                                 <% if gig.end_time %>
-                                    - <%= gig.end_time.in_time_zone(@band.band_timezone).strftime('%I:%M %p') %>
+                                    - <span class="local-time" data-utc="<%= gig.end_time.utc.iso8601 %>"><%= gig.end_time.utc.strftime('%I:%M %p UTC') %></span>
                                 <% end %>
-                                <span style="font-size: 0.85em; color: #94a3b8;"><%= local_start.strftime('%Z') %></span>
                             </div>
                         <% end %>
                         <% if gig.venue %>
