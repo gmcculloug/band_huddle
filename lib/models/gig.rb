@@ -17,4 +17,5 @@ class Gig < ActiveRecord::Base
   scope :without_venue, -> { left_joins(:venue).where(venues: { id: nil }) }
   scope :chronological, -> { order(:performance_date) }
   scope :reverse_chronological, -> { order(performance_date: :desc) }
+  scope :public_events, -> { where(private_event: false) }
 end

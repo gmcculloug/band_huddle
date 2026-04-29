@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_26_165312) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_29_094639) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -70,6 +70,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_26_165312) do
     t.string "name", null: false
     t.text "notes"
     t.date "performance_date"
+    t.boolean "private_event", default: false, null: false
     t.datetime "start_time"
     t.datetime "updated_at", null: false
     t.integer "venue_id"
@@ -205,8 +206,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_26_165312) do
     t.boolean "practice_state", default: false, null: false
     t.datetime "practice_state_updated_at", precision: nil
     t.bigint "song_id", null: false
-    t.string "transposed_key", limit: 10
-    t.integer "transposition_semitones", default: 0
     t.index ["band_id", "practice_state"], name: "index_songs_bands_on_band_id_and_practice_state"
     t.index ["band_id"], name: "index_songs_bands_on_band_id"
     t.index ["practice_state"], name: "index_songs_bands_on_practice_state"

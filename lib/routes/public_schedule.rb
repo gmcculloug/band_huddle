@@ -56,17 +56,18 @@ class Routes::PublicSchedule < Sinatra::Base
         name: band.name
       },
       gigs: gigs.map { |gig|
-        {
+        entry = {
           id: gig.id,
           name: gig.name,
           performance_date: gig.performance_date.iso8601,
-          start_time: gig.start_time&.strftime('%H:%M'),
-          end_time: gig.end_time&.strftime('%H:%M'),
-          venue: gig.venue ? {
-            name: gig.venue.name,
-            location: gig.venue.location
-          } : nil
+          private_event: gig.private_event
         }
+        unless gig.private_event
+          entry[:start_time] = gig.start_time&.strftime('%H:%M')
+          entry[:end_time]   = gig.end_time&.strftime('%H:%M')
+          entry[:venue]      = gig.venue ? { name: gig.venue.name, location: gig.venue.location } : nil
+        end
+        entry
       }
     }.to_json
   end

@@ -137,7 +137,8 @@ class Routes::Gigs < Sinatra::Base
       venue_id: params[:venue_id].presence,
       performance_date: params[:performance_date],
       start_time: start_time,
-      end_time: end_time
+      end_time: end_time,
+      private_event: params[:private_event] == '1'
     }
 
     gig = Gig.new(gig_params)
@@ -253,7 +254,8 @@ class Routes::Gigs < Sinatra::Base
       venue_id: params[:venue_id].presence,
       performance_date: params[:performance_date],
       start_time: start_time,
-      end_time: end_time
+      end_time: end_time,
+      private_event: params[:private_event] == '1'
     }
 
     if @gig.update(gig_params)

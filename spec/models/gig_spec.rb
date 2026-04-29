@@ -41,8 +41,16 @@ RSpec.describe Gig, type: :model do
       gig_c = create(:gig, name: 'C Set List')
       gig_a = create(:gig, name: 'A Set List')
       gig_b = create(:gig, name: 'B Set List')
-      
+
       expect(Gig.order(:name)).to eq([gig_a, gig_b, gig_c])
+    end
+
+    it 'filters public events only' do
+      public_gig = create(:gig, name: 'Public Gig', private_event: false)
+      private_gig = create(:gig, name: 'Private Gig', private_event: true)
+
+      expect(Gig.public_events).to include(public_gig)
+      expect(Gig.public_events).not_to include(private_gig)
     end
   end
 

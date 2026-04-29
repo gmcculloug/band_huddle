@@ -79,6 +79,35 @@ RSpec.describe 'Public Schedule Routes', type: :request do
         expect(last_response).to be_ok
         expect(last_response.body).to include('Venue-less Gig')
       end
+
+      it 'displays private events without time or location' do
+        private_venue = create(:venue, band: band_with_gigs, name: 'Secret Venue', location: 'Secret Location')
+        private_gig = create(:gig,
+          band: band_with_gigs,
+          name: 'Secret Party',
+          performance_date: Date.current + 5.days,
+          start_time: Time.new(2025, 1, 1, 20, 0, 0),
+          end_time: Time.new(2025, 1, 1, 23, 0, 0),
+          venue: private_venue,
+          private_event: true
+        )
+
+        get "/schedule/#{band_with_gigs.slug}"
+
+        expect(last_response).to be_ok
+        expect(last_response.body).to include('Private Event')
+        expect(last_response.body).not_to include('Secret Party')
+        expect(last_response.body).not_to include('Secret Venue')
+        expect(last_response.body).not_to include('Secret Location')
+      end
+
+      it 'displays public events with full details' do
+        get "/schedule/#{band_with_gigs.slug}"
+
+        expect(last_response.body).to include(gig.name)
+        expect(last_response.body).to include('Test Venue')
+        expect(last_response.body).to include('123 Main St')
+      end
     end
 
     context 'when public schedule is disabled' do
@@ -200,6 +229,41 @@ RSpec.describe 'Public Schedule Routes', type: :request do
 
         json = JSON.parse(last_response.body)
         expect(json['gigs']).to eq([])
+      end
+
+      it 'omits time and venue for private events' do
+        private_venue = create(:venue, band: band_with_gigs, name: 'Secret Venue', location: 'Secret Location')
+        private_gig = create(:gig,
+          band: band_with_gigs,
+          name: 'Private Party',
+          performance_date: Date.current + 5.days,
+          start_time: Time.new(2025, 1, 1, 20, 0, 0),
+          end_time: Time.new(2025, 1, 1, 23, 0, 0),
+          venue: private_venue,
+          private_event: true
+        )
+
+        get "/api/public/bands/#{band_with_gigs.slug}/schedule"
+
+        json = JSON.parse(last_response.body)
+        private_gig_json = json['gigs'].find { |g| g['name'] == 'Private Party' }
+
+        expect(private_gig_json['private_event']).to be true
+        expect(private_gig_json).not_to have_key('start_time')
+        expect(private_gig_json).not_to have_key('end_time')
+        expect(private_gig_json).not_to have_key('venue')
+      end
+
+      it 'includes time and venue for public events' do
+        get "/api/public/bands/#{band_with_gigs.slug}/schedule"
+
+        json = JSON.parse(last_response.body)
+        public_gig_json = json['gigs'].find { |g| g['name'] == 'First Gig' }
+
+        expect(public_gig_json['private_event']).to be false
+        expect(public_gig_json).to have_key('start_time')
+        expect(public_gig_json).to have_key('end_time')
+        expect(public_gig_json).to have_key('venue')
       end
     end
 
