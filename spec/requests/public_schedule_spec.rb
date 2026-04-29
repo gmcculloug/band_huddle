@@ -5,6 +5,12 @@ RSpec.describe 'Public Schedule Routes', type: :request do
   let(:band_with_gigs) { create(:band, name: 'Test Band', public_schedule_enabled: true) }
   let(:disabled_band) { create(:band, name: 'Private Band', public_schedule_enabled: false) }
 
+  around(:each) do |example|
+    freeze_time_for_testing do
+      example.run
+    end
+  end
+
   describe 'GET /schedule/:slug' do
     context 'when public schedule is enabled' do
       let!(:gig) { create(:gig, band: band_with_gigs, performance_date: Date.current + 7.days, start_time: Time.new(2025, 1, 1, 19, 0, 0)) }
