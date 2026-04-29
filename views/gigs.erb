@@ -11,6 +11,11 @@
                     (<%= @upcoming_gigs.count %> upcoming)
                 </span>
             <% end %>
+            <% if current_band && current_band.public_schedule_enabled? %>
+                <a href="/schedule/<%= current_band.slug %>" target="_blank" style="font-weight: normal; color: #667eea; font-size: 0.6em; margin-left: 12px; text-decoration: none;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">
+                    Public Schedule
+                </a>
+            <% end %>
         </h2>
         <p style="color: #718096; margin: 5px 0 0 0;">Welcome to Band Huddle! Manage your gigs, songs, and performances.</p>
     </div>
