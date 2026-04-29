@@ -124,6 +124,43 @@ RSpec.describe 'Gigs API', type: :request do
       expect(last_response).to be_ok
       expect(last_response.body).to include("Performance date can't be blank")
     end
+
+    it 'creates a private gig when private_event is checked' do
+      login_as(user, band)
+      venue = create(:venue, band: band)
+      gig_params = {
+        name: 'Private Gig',
+        band_id: band.id,
+        venue_id: venue.id,
+        performance_date: '2024-12-25',
+        start_time: '20:00',
+        private_event: '1'
+      }
+
+      expect {
+        post '/gigs', gig_params
+      }.to change(Gig, :count).by(1)
+
+      new_gig = Gig.last
+      expect(new_gig.private_event).to be true
+      expect(new_gig.name).to eq('Private Gig')
+    end
+
+    it 'creates a public gig when private_event is not checked' do
+      login_as(user, band)
+      gig_params = {
+        name: 'Public Gig',
+        band_id: band.id,
+        performance_date: '2024-12-25'
+      }
+
+      expect {
+        post '/gigs', gig_params
+      }.to change(Gig, :count).by(1)
+
+      new_gig = Gig.last
+      expect(new_gig.private_event).to be false
+    end
   end
 
   describe 'GET /gigs/:id' do
@@ -229,6 +266,35 @@ RSpec.describe 'Gigs API', type: :request do
     it 'returns 404 for non-existent gig' do
       login_as(user, band)
       expect { put '/gigs/999', name: 'New Name' }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+
+    it 'can mark a gig as private' do
+      login_as(user, band)
+      gig = create(:gig, name: 'Public Gig', band: band, private_event: false)
+      update_params = {
+        name: gig.name,
+        performance_date: gig.performance_date,
+        private_event: '1'
+      }
+
+      put "/gigs/#{gig.id}", update_params
+
+      expect(last_response).to be_redirect
+      expect(gig.reload.private_event).to be true
+    end
+
+    it 'can mark a gig as public' do
+      login_as(user, band)
+      gig = create(:gig, name: 'Private Gig', band: band, private_event: true)
+      update_params = {
+        name: gig.name,
+        performance_date: gig.performance_date
+      }
+
+      put "/gigs/#{gig.id}", update_params
+
+      expect(last_response).to be_redirect
+      expect(gig.reload.private_event).to be false
     end
   end
 

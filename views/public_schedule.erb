@@ -14,22 +14,24 @@
                         <div class="weekday"><%= gig.performance_date.strftime('%A') %></div>
                     </div>
                     <div class="gig-details">
-                        <div class="gig-name"><%= h(gig.name) %></div>
-                        <% if gig.start_time %>
-                            <div class="gig-time">
-                                🕐 <span class="local-time" data-utc="<%= gig.start_time.utc.iso8601 %>"><%= gig.start_time.utc.strftime('%I:%M %p UTC') %></span>
-                                <% if gig.end_time %>
-                                    - <span class="local-time" data-utc="<%= gig.end_time.utc.iso8601 %>"><%= gig.end_time.utc.strftime('%I:%M %p UTC') %></span>
-                                <% end %>
-                            </div>
-                        <% end %>
-                        <% if gig.venue %>
-                            <div class="gig-venue">
-                                📍 <span class="venue-name"><%= h(gig.venue.name) %></span>
-                                <% if gig.venue.location %>
-                                    <span class="venue-location"> — <%= h(gig.venue.location) %></span>
-                                <% end %>
-                            </div>
+                        <div class="gig-name"><%= gig.private_event ? 'Private Event' : h(gig.name) %></div>
+                        <% unless gig.private_event %>
+                            <% if gig.start_time %>
+                                <div class="gig-time">
+                                    🕐 <span class="local-time" data-utc="<%= gig.start_time.utc.iso8601 %>"><%= gig.start_time.utc.strftime('%I:%M %p UTC') %></span>
+                                    <% if gig.end_time %>
+                                        - <span class="local-time" data-utc="<%= gig.end_time.utc.iso8601 %>"><%= gig.end_time.utc.strftime('%I:%M %p UTC') %></span>
+                                    <% end %>
+                                </div>
+                            <% end %>
+                            <% if gig.venue %>
+                                <div class="gig-venue">
+                                    📍 <span class="venue-name"><%= h(gig.venue.name) %></span>
+                                    <% if gig.venue.location %>
+                                        <span class="venue-location"> — <%= h(gig.venue.location) %></span>
+                                    <% end %>
+                                </div>
+                            <% end %>
                         <% end %>
                     </div>
                 </div>
