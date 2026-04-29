@@ -132,7 +132,7 @@ module SongData
     { title: "Good Lovin'", artist: "The Young Rascals", key: "A", original_key: "A", tempo: 132, genre: "Rock", year: 1966, album: "The Young Rascals", duration: "2:53" },
     { title: "Hang on Sloopy", artist: "The McCoys", key: "C", original_key: "C", tempo: 150, genre: "Rock", year: 1965, album: "Hang On Sloopy", duration: "3:12" },
 
-    # Side Piece specific songs
+    # Sidepiece specific songs
     { title: "My Church", artist: "Maren Morris", key: "E", original_key: "E", tempo: 120, genre: "Country", year: 2016, album: "Hero", duration: "3:30" },
     { title: "Glory Days", artist: "Bruce Springsteen", key: "E", original_key: "E", tempo: 140, genre: "Rock", year: 1984, album: "Born in the U.S.A.", duration: "4:15" },
     { title: "Faith", artist: "George Michael", key: "C", original_key: "C", tempo: 96, genre: "Pop", year: 1987, album: "Faith", duration: "3:16" },

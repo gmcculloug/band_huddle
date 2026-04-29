@@ -39,10 +39,11 @@ bands = []
 greg = users.find { |u| u.username == "greg" }
 steve = users.find { |u| u.username == "steve" }
 
-# Create Side Piece band with Greg as owner
-side_piece_band = Band.find_or_create_by(name: "Side Piece") do |b|
+# Create Sidepiece band with Greg as owner
+side_piece_band = Band.find_or_create_by(name: "Sidepiece") do |b|
   b.owner = greg
-  b.notes = "Side Piece band"
+  b.notes = "Sidepiece band"
+  b.public_schedule_enabled = true
 end
 bands << side_piece_band
 
@@ -50,6 +51,7 @@ bands << side_piece_band
 sound_bite_band = Band.find_or_create_by(name: "Sound Bite") do |b|
   b.owner = greg
   b.notes = "Sound Bite band with extensive song list"
+  b.public_schedule_enabled = true
 end
 bands << sound_bite_band
 
@@ -57,6 +59,7 @@ bands << sound_bite_band
 on_tap_band = Band.find_or_create_by(name: "On Tap") do |b|
   b.owner = steve
   b.notes = "On Tap band"
+  b.public_schedule_enabled = true
 end
 bands << on_tap_band
 
@@ -64,7 +67,7 @@ puts "Created/found band: #{side_piece_band.name} (owner: #{greg.username})"
 puts "Created/found band: #{sound_bite_band.name} (owner: #{greg.username})"
 puts "Created/found band: #{on_tap_band.name} (owner: #{steve.username})"
 
-# Assign users to Side Piece band (Greg, Vik, Gershom, Ingrid, Dave, Armaan)
+# Assign users to Sidepiece band (Greg, Vik, Gershom, Ingrid, Dave, Armaan)
 side_piece_users = ["greg", "vik", "gershom", "ingrid", "dave", "armaan"]
 side_piece_users.each do |username|
   user = users.find { |u| u.username == username }
@@ -79,7 +82,7 @@ side_piece_users.each do |username|
   # Set as user's last selected band
   user.update(last_selected_band: side_piece_band)
 end
-puts "Added members to Side Piece: #{side_piece_users.join(', ')} (Greg as owner)"
+puts "Added members to Sidepiece: #{side_piece_users.join(', ')} (Greg as owner)"
 
 # Assign users to Sound Bite band (Greg, Jim, Bill, DaveP, Deb, Courtney)
 sound_bite_users = ["greg", "jim", "bill", "davep", "deb", "courtney"]
@@ -93,7 +96,7 @@ sound_bite_users.each do |username|
   user_band.role = role
   user_band.save!
 
-  # Set as user's last selected band if they're not already in Side Piece
+  # Set as user's last selected band if they're not already in Sidepiece
   unless side_piece_users.include?(username)
     user.update(last_selected_band: sound_bite_band)
   end
@@ -180,8 +183,8 @@ end
 
 # Create songs for bands from global songs
 bands.each do |band|
-  if band.name == "Side Piece"
-    # Side Piece gets specific songs
+  if band.name == "Sidepiece"
+    # Sidepiece gets specific songs
     side_piece_songs = SongData.side_piece_songs
     selected_song_catalogs = song_catalogs.select { |sc| side_piece_songs.any? { |song| song[:title] == sc.title && song[:artist] == sc.artist } }
   elsif band.name == "Sound Bite"
