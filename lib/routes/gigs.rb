@@ -126,16 +126,20 @@ class Routes::Gigs < Sinatra::Base
   post '/gigs' do
     require_login
     return redirect '/gigs' unless current_band
-    
+
+    # Parse start_time and end_time as UTC (frontend sends ISO string via .toISOString())
+    start_time = params[:start_time].presence ? Time.parse(params[:start_time]).utc : nil
+    end_time = params[:end_time].presence ? Time.parse(params[:end_time]).utc : nil
+
     gig_params = {
-      name: params[:name], 
+      name: params[:name],
       band_id: current_band.id,
       venue_id: params[:venue_id].presence,
       performance_date: params[:performance_date],
-      start_time: params[:start_time].presence,
-      end_time: params[:end_time].presence
+      start_time: start_time,
+      end_time: end_time
     }
-    
+
     gig = Gig.new(gig_params)
     if gig.save
       # Sync to Google Calendar if enabled
@@ -238,14 +242,18 @@ class Routes::Gigs < Sinatra::Base
     require_login
     @gig = find_user_gig(params[:id])
 
+    # Parse start_time and end_time as UTC (frontend sends ISO string via .toISOString())
+    start_time = params[:start_time].presence ? Time.parse(params[:start_time]).utc : nil
+    end_time = params[:end_time].presence ? Time.parse(params[:end_time]).utc : nil
+
     gig_params = {
       name: params[:name],
       notes: params[:notes],
       band_id: @gig.band.id,
       venue_id: params[:venue_id].presence,
       performance_date: params[:performance_date],
-      start_time: params[:start_time].presence,
-      end_time: params[:end_time].presence
+      start_time: start_time,
+      end_time: end_time
     }
 
     if @gig.update(gig_params)
