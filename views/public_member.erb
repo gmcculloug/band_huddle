@@ -33,6 +33,10 @@
                                     <% if gig.venue.location %>
                                         <span class="venue-location"> — <%= h(gig.venue.location) %></span>
                                     <% end %>
+                                    <% if gig.venue.website.present? %>
+                                        <br>
+                                        🔗 <a href="<%= h(gig.venue.website) %>" target="_blank" rel="noopener noreferrer"><%= h(gig.venue.website) %></a>
+                                    <% end %>
                                 </div>
                             <% end %>
                         <% end %>
