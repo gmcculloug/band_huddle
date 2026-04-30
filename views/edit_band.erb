@@ -265,7 +265,7 @@
                 </label>
                 <p style="color: #666; margin-left: 30px; margin-bottom: 15px;">
                     When enabled, your upcoming gigs will be visible to anyone at:<br>
-                    <strong id="public-url" style="word-break: break-all;">https://bandhuddle.com/schedule/<%= @band.slug %></strong>
+                    <a href="/schedule/<%= @band.slug %>" target="_blank" id="public-url" style="font-weight: 600; color: #10b981; text-decoration: none; word-break: break-all;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';"><%= ENV['BASE_URL'] %>/schedule/<%= @band.slug %></a>
                 </p>
             </div>
 
