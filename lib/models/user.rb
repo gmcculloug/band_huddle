@@ -11,8 +11,9 @@ class User < ActiveRecord::Base
   validates :username, presence: true, uniqueness: { case_sensitive: false }
   validates :email, uniqueness: { case_sensitive: false }, allow_blank: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
-  validates :timezone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) + [nil] }, allow_nil: true
   validates :display_name, presence: true, length: { maximum: 100 }
+  validates :slug, uniqueness: true, allow_nil: true
+  validates :slug, format: { with: /\A[a-z0-9\-]+\z/, message: "can only contain lowercase letters, numbers, and hyphens" }, allow_blank: true
 
   # Password validations - only required if no OAuth provider
   validates :password, length: { minimum: 6 }, if: :password_required?
@@ -29,6 +30,7 @@ class User < ActiveRecord::Base
 
   # Set default display name before validation if not set
   before_validation :set_default_display_name, on: :create
+  after_create :generate_slug_after_create, if: -> { slug.blank? }
 
   # Helper methods for checking ownership and membership
   def owner_of?(band)
@@ -39,15 +41,6 @@ class User < ActiveRecord::Base
   def member_of?(band)
     return false unless band
     user_bands.exists?(band_id: band.id)
-  end
-
-  # Timezone helpers
-  def user_timezone
-    timezone.presence || detect_timezone || 'UTC'
-  end
-
-  def time_zone
-    ActiveSupport::TimeZone.new(user_timezone)
   end
 
   # OAuth helper methods
@@ -71,6 +64,14 @@ class User < ActiveRecord::Base
     oauth_provider == provider.to_s
   end
 
+  # Public profile helper
+  def public_profile_enabled?
+    # Use read_attribute to access boolean directly
+    # Returns false if column doesn't exist (for backward compatibility)
+    self.class.column_names.include?('public_profile_enabled') &&
+      read_attribute(:public_profile_enabled) == true
+  end
+
   # Display name helpers
   def display_name_or_fallback
     display_name.presence || default_display_name
@@ -90,24 +91,21 @@ class User < ActiveRecord::Base
     super(password)
   end
 
-  private
+  # Ensures slug uniqueness when manually updated
+  # Appends random number if the desired slug is taken
+  def ensure_slug_uniqueness(desired_slug)
+    base_slug = desired_slug.parameterize
+    candidate_slug = base_slug
 
-  def detect_timezone
-    # Try to detect a reasonable default timezone based on common US timezones
-    # In a real app, you might detect this from IP geolocation or browser timezone
-    case Time.now.zone
-    when 'EST', 'EDT'
-      'America/New_York'
-    when 'CST', 'CDT'
-      'America/Chicago'
-    when 'MST', 'MDT'
-      'America/Denver'
-    when 'PST', 'PDT'
-      'America/Los_Angeles'
-    else
-      'America/New_York' # Default to Eastern if we can't detect
+    # Ensure uniqueness by appending random numbers if needed
+    while User.where(slug: candidate_slug).where.not(id: id).exists?
+      candidate_slug = "#{base_slug}-#{rand(1000..9999)}"
     end
+
+    candidate_slug
   end
+
+  private
 
   # Validation helper methods
   def password_required?
@@ -123,5 +121,20 @@ class User < ActiveRecord::Base
   def set_default_display_name
     return if display_name.present?
     self.display_name = default_display_name
+  end
+
+  # Generates slug after create when username is available
+  # Default value is the user's username (parameterized)
+  # If slug already exists, append random number to make it unique
+  def generate_slug_after_create
+    base_slug = username.parameterize
+    candidate_slug = base_slug
+
+    # Ensure uniqueness by appending random numbers if needed
+    while User.where(slug: candidate_slug).where.not(id: id).exists?
+      candidate_slug = "#{base_slug}-#{rand(1000..9999)}"
+    end
+
+    update_column(:slug, candidate_slug)
   end
 end

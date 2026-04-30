@@ -1,15 +1,12 @@
 require_relative '../spec_helper'
 
 RSpec.describe 'Public Schedule Routes', type: :request do
+  include TimeHelpers
+  freeze_time_for_testing
+
   let(:band) { create(:band, public_schedule_enabled: true) }
   let(:band_with_gigs) { create(:band, name: 'Test Band', public_schedule_enabled: true) }
   let(:disabled_band) { create(:band, name: 'Private Band', public_schedule_enabled: false) }
-
-  around(:each) do |example|
-    freeze_time_for_testing do
-      example.run
-    end
-  end
 
   describe 'GET /schedule/:slug' do
     context 'when public schedule is enabled' do

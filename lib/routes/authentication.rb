@@ -307,6 +307,67 @@ class Routes::Authentication < Sinatra::Base
     erb :profile
   end
 
+  post '/profile/public_profile_settings' do
+    require_login
+
+    begin
+      enabled = params[:public_profile_enabled] == '1'
+
+      # Handle slug update - check if slug field was submitted and has content
+      if params[:slug] && !params[:slug].strip.empty?
+        desired_slug = params[:slug].strip.downcase
+        # Ensure uniqueness
+        unique_slug = current_user.ensure_slug_uniqueness(desired_slug)
+
+        # Validate the slug isn't empty after parameterization
+        if unique_slug.blank?
+          @error = "Invalid slug: must contain at least one letter or number"
+          return erb :profile
+        end
+
+        current_user.update!(public_profile_enabled: enabled, slug: unique_slug)
+      else
+        current_user.update!(public_profile_enabled: enabled)
+      end
+
+      redirect '/profile?success=Public+profile+settings+updated+successfully'
+    rescue ActiveRecord::RecordInvalid => e
+      @error = "Failed to update settings: #{e.record.errors.full_messages.join(', ')}"
+      erb :profile
+    rescue => e
+      @error = "Failed to update settings: #{e.message}"
+      erb :profile
+    end
+  end
+
+  # API endpoint to check slug availability
+  get '/api/check_slug_availability' do
+    require_login
+    content_type :json
+
+    slug = params[:slug]
+
+    if slug.nil? || slug.strip.empty?
+      return { available: false, message: 'Slug cannot be empty' }.to_json
+    end
+
+    # Parameterize the slug the same way we do when saving
+    parameterized_slug = slug.strip.parameterize
+
+    if parameterized_slug.empty?
+      return { available: false, message: 'Slug must contain at least one letter or number' }.to_json
+    end
+
+    # Check if slug is taken by another user
+    existing_user = User.where(slug: parameterized_slug).where.not(id: current_user.id).first
+
+    if existing_user
+      { available: false, message: 'This URL is already taken' }.to_json
+    else
+      { available: true, message: 'This URL is available', slug: parameterized_slug }.to_json
+    end
+  end
+
   get '/account/delete' do
     require_login
     @breadcrumbs = [

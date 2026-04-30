@@ -3,7 +3,6 @@ FactoryBot.define do
     sequence(:username) { |n| "user#{n}" }
     password { "password123" }
     email { Faker::Internet.email }
-    timezone { "UTC" } # Use UTC for tests to maintain predictable behavior
   end
 
   factory :user_band do

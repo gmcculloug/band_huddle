@@ -113,15 +113,14 @@ class Routes::Practices < Sinatra::Base
       return erb :new_practice
     end
 
-    # Parse start_time if provided - now timezone aware
+    # Parse start_time if provided - stored as UTC, browser handles timezone display
     start_time = nil
     if params[:start_time] && !params[:start_time].empty?
       begin
-        user_timezone = current_user.user_timezone
-        # Parse time in user's timezone and convert to UTC for storage
-        parsed_time = Time.parse(params[:start_time]).in_time_zone(user_timezone)
+        # Parse time and store as UTC
+        parsed_time = Time.parse(params[:start_time])
         start_time = parsed_time.utc
-      rescue ArgumentError, TZInfo::InvalidTimezoneIdentifier
+      rescue ArgumentError
         @error = "Invalid start time format"
         return erb :new_practice
       end
@@ -362,15 +361,14 @@ class Routes::Practices < Sinatra::Base
       return erb :edit_practice
     end
 
-    # Parse start_time if provided - now timezone aware
+    # Parse start_time if provided - stored as UTC, browser handles timezone display
     start_time = nil
     if params[:start_time] && !params[:start_time].empty?
       begin
-        user_timezone = current_user.user_timezone
-        # Parse time in user's timezone and convert to UTC for storage
-        parsed_time = Time.parse(params[:start_time]).in_time_zone(user_timezone)
+        # Parse time and store as UTC
+        parsed_time = Time.parse(params[:start_time])
         start_time = parsed_time.utc
-      rescue ArgumentError, TZInfo::InvalidTimezoneIdentifier
+      rescue ArgumentError
         @error = "Invalid start time format"
         @practice.title = params[:title] if params[:title]
         @practice.description = params[:description] if params[:description]

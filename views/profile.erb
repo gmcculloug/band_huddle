@@ -11,130 +11,244 @@
 <%= erb :_errors %>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-    <!-- Profile Information -->
-    <div class="card">
-        <h3>Profile Information</h3>
-        <form method="POST" action="/profile">
-            <input type="hidden" name="_method" value="PUT">
-            
-            <div class="form-group">
-                <label for="display_name">Display Name:</label>
-                <input type="text" id="display_name" name="user[display_name]" value="<%= current_user.display_name %>" placeholder="Enter your display name" required maxlength="100">
-                <small>This is how your name will appear to other band members</small>
-            </div>
+    <!-- LEFT COLUMN -->
+    <div>
+        <!-- Profile Information -->
+        <div class="card">
+            <h3>Profile Information</h3>
+            <form method="POST" action="/profile">
+                <input type="hidden" name="_method" value="PUT">
 
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="user[username]" value="<%= current_user.username %>" readonly style="background-color: #f3f4f6;">
-                <small>Username cannot be changed</small>
-            </div>
+                <div class="form-group">
+                    <label for="display_name">Display Name:</label>
+                    <input type="text" id="display_name" name="user[display_name]" value="<%= current_user.display_name %>" placeholder="Enter your display name" required maxlength="100">
+                    <small>This is how your name will appear to other band members</small>
+                </div>
 
-            <div class="form-group">
-                <label for="email">Email Address:</label>
-                <input type="email" id="email" name="user[email]" value="<%= current_user.email %>" placeholder="Enter your email address">
-                <small>Optional - for account recovery and notifications</small>
-            </div>
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="user[username]" value="<%= current_user.username %>" readonly style="background-color: #f3f4f6;">
+                    <small>Username cannot be changed</small>
+                </div>
 
-            <div class="form-group">
-                <label for="timezone">Timezone:</label>
-                <select id="timezone" name="user[timezone]" required>
-                    <% common_timezones = [
-                        'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
-                        'America/Phoenix', 'America/Anchorage', 'Pacific/Honolulu',
-                        'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome',
-                        'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata', 'Australia/Sydney',
-                        'UTC'
-                    ] %>
+                <div class="form-group">
+                    <label for="email">Email Address:</label>
+                    <input type="email" id="email" name="user[email]" value="<%= current_user.email %>" placeholder="Enter your email address">
+                    <small>Optional - for account recovery and notifications</small>
+                </div>
 
-                    <optgroup label="Common Timezones">
-                        <% common_timezones.each do |tz| %>
-                            <option value="<%= tz %>" <%= 'selected' if current_user.user_timezone == tz %>>
-                                <%= tz.gsub('_', ' ') %> (<%= Time.now.in_time_zone(tz).strftime('%Z %:z') %>)
-                            </option>
-                        <% end %>
-                    </optgroup>
+                <div class="actions">
+                    <button type="submit" class="btn btn-success">Update Profile</button>
+                </div>
+            </form>
+        </div>
 
-                    <optgroup label="All Timezones">
-                        <% ActiveSupport::TimeZone.all.each do |tz| %>
-                            <% unless common_timezones.include?(tz.name) %>
-                                <option value="<%= tz.name %>" <%= 'selected' if current_user.user_timezone == tz.name %>>
-                                    <%= tz.name.gsub('_', ' ') %> (<%= tz.formatted_offset %>)
-                                </option>
-                            <% end %>
-                        <% end %>
-                    </optgroup>
-                </select>
-                <small>All practice times will be displayed in your selected timezone</small>
-            </div>
+        <!-- Change Password -->
+        <div class="card" style="margin-top: 30px;">
+            <h3>Change Password</h3>
+            <form method="POST" action="/profile/change_password">
+                <div class="form-group">
+                    <label for="current_password">Current Password:</label>
+                    <input type="password" id="current_password" name="current_password" required>
+                </div>
 
-            <div class="actions">
-                <button type="submit" class="btn btn-success">Update Profile</button>
-            </div>
-        </form>
-    </div>
+                <div class="form-group">
+                    <label for="new_password">New Password:</label>
+                    <input type="password" id="new_password" name="new_password" required minlength="6">
+                    <small>Password must be at least 6 characters long</small>
+                </div>
 
-    <!-- Bands Management -->
-    <div class="card">
-        <h3>Bands Management</h3>
-        <% if user_bands.any? %>
-            <div class="bands-list">
-                <h4>Your Bands</h4>
-                <% user_bands.each do |band| %>
-                    <div class="band-item" style="cursor: pointer; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 8px; transition: background-color 0.2s;" onclick="window.location.href='/bands/<%= band.id %>'">
-                        <div class="band-info">
-                            <span class="band-name"><%= band.name %></span>
-                            <% if current_band&.id == band.id %>
-                                <span class="current-badge">Current</span>
-                            <% end %>
-                        </div>
-                        <div class="band-stats">
-                            <span class="stat">
-                                <strong><%= band.songs.count %></strong> songs
-                            </span>
-                            <span class="stat">
-                                <strong><%= band.gigs.count %></strong> set lists
-                            </span>
-                        </div>
-                    </div>
-                <% end %>
-            </div>
-        <% else %>
-            <div style="text-align: center; padding: 20px;">
-                <p style="color: #666; margin-bottom: 15px;">You haven't joined any bands yet.</p>
-                <a href="/bands/new" class="btn btn-success">Create Your First Band</a>
-            </div>
-        <% end %>
-        
-        <div class="actions" style="margin-top: 20px;">
-            <a href="/bands/new" class="btn btn-success">Create New Band</a>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm New Password:</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn">Change Password</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Change Password -->
-    <div class="card">
-        <h3>Change Password</h3>
-        <form method="POST" action="/profile/change_password">
-            <div class="form-group">
-                <label for="current_password">Current Password:</label>
-                <input type="password" id="current_password" name="current_password" required>
-            </div>
+    <!-- RIGHT COLUMN -->
+    <div>
+        <!-- Bands Management -->
+        <div class="card">
+            <h3>Bands Management</h3>
+            <% if user_bands.any? %>
+                <div class="bands-list">
+                    <h4>Your Bands</h4>
+                    <% user_bands.each do |band| %>
+                        <div class="band-item" style="cursor: pointer; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 8px; transition: background-color 0.2s;" onclick="window.location.href='/bands/<%= band.id %>'">
+                            <div class="band-info">
+                                <span class="band-name"><%= band.name %></span>
+                                <% if current_band&.id == band.id %>
+                                    <span class="current-badge">Current</span>
+                                <% end %>
+                            </div>
+                            <div class="band-stats">
+                                <span class="stat">
+                                    <strong><%= band.songs.count %></strong> songs
+                                </span>
+                                <span class="stat">
+                                    <strong><%= band.gigs.count %></strong> set lists
+                                </span>
+                            </div>
+                        </div>
+                    <% end %>
+                </div>
+            <% else %>
+                <div style="text-align: center; padding: 20px;">
+                    <p style="color: #666; margin-bottom: 15px;">You haven't joined any bands yet.</p>
+                    <a href="/bands/new" class="btn btn-success">Create Your First Band</a>
+                </div>
+            <% end %>
 
-            <div class="form-group">
-                <label for="new_password">New Password:</label>
-                <input type="password" id="new_password" name="new_password" required minlength="6">
-                <small>Password must be at least 6 characters long</small>
+            <div class="actions" style="margin-top: 20px;">
+                <a href="/bands/new" class="btn btn-success">Create New Band</a>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label for="confirm_password">Confirm New Password:</label>
-                <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
-            </div>
+        <!-- Public Profile Settings -->
+        <div class="card" style="margin-top: 30px;">
+            <h3>🌐 Public Profile</h3>
+            <form method="POST" action="/profile/public_profile_settings">
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="public_profile_enabled_checkbox" name="public_profile_enabled" value="1"
+                            <%= 'checked' if current_user.public_profile_enabled? %>
+                            style="width: 20px; height: 20px;">
+                        <span>Enable Public Profile</span>
+                    </label>
+                    <small>Allow anyone to see your upcoming performances across all your bands</small>
+                </div>
 
-            <div class="actions">
-                <button type="submit" class="btn">Change Password</button>
-            </div>
-        </form>
+                <div id="slug_field" class="form-group" style="margin-top: 15px;">
+                    <label for="slug">Profile URL Suffix:</label>
+                    <input type="text" id="slug" name="slug" value="<%= current_user.slug %>" placeholder="<%= current_user.username %>" maxlength="50">
+                    <div id="slug_validation_message" style="margin-top: 8px; font-size: 0.9rem; display: none;"></div>
+                    <small>Customize your public profile URL. Spaces and special characters will be converted to hyphens.</small>
+                </div>
+
+                <div id="public_profile_notes" style="margin-top: 15px; padding: 12px; background: #fef9e7; border: 1px solid #fbbf24; border-radius: 6px; font-size: 0.85rem;">
+                    <strong>ℹ️ What's shared publicly:</strong>
+                    <ul style="margin: 8px 0 0 20px; padding: 0;">
+                        <li>Your display name</li>
+                        <li>Upcoming performances from bands that have enabled public schedules</li>
+                    </ul>
+                    <strong style="display: block; margin-top: 8px;">🔒 What's kept private:</strong>
+                    <ul style="margin: 8px 0 0 20px; padding: 0;">
+                        <li>Your email address and account details</li>
+                        <li>Private events (shown as "Private Event" only)</li>
+                        <li>Performances from bands with disabled public schedules</li>
+                    </ul>
+                </div>
+
+                <% if current_user.public_profile_enabled? %>
+                    <div id="public_profile_info" style="margin-top: 15px; padding: 15px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
+                        <div style="margin-bottom: 10px;">
+                            <strong>Your public profile URL:</strong>
+                        </div>
+                        <div style="font-family: monospace; background: white; padding: 10px; border-radius: 4px; font-size: 0.9rem; word-break: break-all;">
+                            <a href="/members/<%= current_user.slug || current_user.username %>" target="_blank" style="color: #667eea; text-decoration: none;">
+                                <%= request.base_url %>/members/<%= current_user.slug || current_user.username %>
+                            </a>
+                        </div>
+                    </div>
+                <% end %>
+
+                <div class="actions" style="margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">Save Public Profile Settings</button>
+                </div>
+            </form>
+        </div>
     </div>
+</div>
+
+<script>
+// Show/hide public profile fields based on checkbox state
+(function() {
+    const checkbox = document.getElementById('public_profile_enabled_checkbox');
+    const slugField = document.getElementById('slug_field');
+    const infoDiv = document.getElementById('public_profile_info');
+    const notesDiv = document.getElementById('public_profile_notes');
+
+    if (checkbox) {
+        checkbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+
+            // Always toggle slug field and notes visibility
+            if (slugField) {
+                slugField.style.display = isChecked ? 'block' : 'none';
+            }
+            if (notesDiv) {
+                notesDiv.style.display = isChecked ? 'block' : 'none';
+            }
+
+            // Only toggle URL info if it exists (only shown after profile is saved)
+            if (infoDiv) {
+                infoDiv.style.display = isChecked ? 'block' : 'none';
+            }
+        });
+
+        // Set initial state on page load
+        if (!checkbox.checked) {
+            if (slugField) slugField.style.display = 'none';
+            if (notesDiv) notesDiv.style.display = 'none';
+            if (infoDiv) infoDiv.style.display = 'none';
+        }
+    }
+})();
+
+// Real-time slug validation
+(function() {
+    const slugInput = document.getElementById('slug');
+    const validationMessage = document.getElementById('slug_validation_message');
+    let debounceTimer;
+
+    if (slugInput && validationMessage) {
+        slugInput.addEventListener('input', function() {
+            const slug = this.value.trim();
+
+            // Clear previous timer
+            clearTimeout(debounceTimer);
+
+            // Hide message if field is empty
+            if (!slug) {
+                validationMessage.style.display = 'none';
+                return;
+            }
+
+            // Show loading state
+            validationMessage.style.display = 'block';
+            validationMessage.style.color = '#666';
+            validationMessage.textContent = 'Checking availability...';
+
+            // Debounce: wait 500ms after user stops typing
+            debounceTimer = setTimeout(function() {
+                fetch('/api/check_slug_availability?slug=' + encodeURIComponent(slug))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.available) {
+                            validationMessage.style.color = '#16a34a'; // Green
+                            validationMessage.textContent = '✓ ' + data.message;
+                            if (data.slug !== slug.toLowerCase()) {
+                                validationMessage.textContent += ' (will be saved as: ' + data.slug + ')';
+                            }
+                        } else {
+                            validationMessage.style.color = '#dc2626'; // Red
+                            validationMessage.textContent = '✗ ' + data.message;
+                        }
+                    })
+                    .catch(error => {
+                        validationMessage.style.color = '#dc2626';
+                        validationMessage.textContent = '✗ Error checking availability';
+                    });
+            }, 500);
+        });
+    }
+})();
+</script>
 
     <!-- OAuth Connections -->
     <div class="card">
@@ -188,10 +302,10 @@
         <% else %>
             <!-- Show available OAuth providers to connect -->
             <div style="padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 15px;">
-                <p style="margin: 0 0 15px 0; color: #666;">Connect your account with an OAuth provider for quick login:</p>
+                <p style="margin: 0 0 15px 0; color: #666;">Connect your Google account for quick login:</p>
 
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <a href="/auth/google" class="btn btn-outline" style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
+                <div>
+                    <a href="/auth/google" class="btn btn-outline" style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; width: fit-content;">
                         <svg width="16" height="16" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -200,25 +314,7 @@
                         </svg>
                         Connect Google
                     </a>
-
-                    <a href="/auth/apple" class="btn btn-outline" style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                        </svg>
-                        Connect Apple
-                    </a>
-
-                    <a href="/auth/github" class="btn btn-outline" style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                        </svg>
-                        Connect GitHub
-                    </a>
                 </div>
-
-                <small style="display: block; margin-top: 10px; color: #666;">
-                    Note: You can only connect one OAuth provider per account.
-                </small>
             </div>
         <% end %>
 
@@ -240,7 +336,6 @@
             </ul>
         </div>
     </div>
-</div>
 
 <!-- Account Statistics -->
 <div class="card" style="margin-top: 30px;">

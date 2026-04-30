@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_29_094639) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_30_151307) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -24,7 +24,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_29_094639) do
     t.bigint "owner_id"
     t.boolean "public_schedule_enabled", default: false
     t.string "slug"
-    t.string "timezone", default: "UTC"
     t.datetime "updated_at", null: false
     t.index ["google_calendar_enabled"], name: "index_bands_on_google_calendar_enabled"
     t.index ["google_calendar_id"], name: "index_bands_on_google_calendar_id"
@@ -240,14 +239,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_29_094639) do
     t.string "oauth_uid"
     t.string "oauth_username"
     t.string "password_digest"
-    t.string "timezone", default: "UTC"
+    t.boolean "public_profile_enabled", default: false, null: false
+    t.string "slug"
     t.datetime "updated_at", null: false
     t.string "username", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["last_selected_band_id"], name: "index_users_on_last_selected_band_id"
     t.index ["locked_at"], name: "index_users_on_locked_at"
     t.index ["oauth_provider", "oauth_uid"], name: "index_users_on_oauth_provider_and_oauth_uid", unique: true
-    t.index ["timezone"], name: "index_users_on_timezone"
+    t.index ["public_profile_enabled"], name: "index_users_on_public_profile_enabled"
+    t.index ["slug"], name: "index_users_on_slug", unique: true
     t.index ["username", "locked_at"], name: "index_users_on_username_and_locked_at"
     t.index ["username"], name: "index_users_on_username", unique: true
   end
