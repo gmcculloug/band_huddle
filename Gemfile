@@ -15,6 +15,7 @@ gem 'dotenv'
 gem 'redis'            # Redis client (Valkey compatible)
 gem 'redis-rack'       # Redis session store for Rack (more stable alternative)
 gem 'connection_pool'  # Connection pooling
+gem 'icalendar'        # iCalendar (.ics) file generation
 
 # OAuth and JWT support
 gem 'jwt'              # JSON Web Token handling

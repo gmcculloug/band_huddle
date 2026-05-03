@@ -303,6 +303,143 @@ RSpec.describe 'Public Schedule Routes', type: :request do
     end
   end
 
+  describe 'GET /schedule/:slug/gigs/:gig_id/calendar.ics' do
+    context 'when public schedule is enabled' do
+      let(:venue) { create(:venue, band: band_with_gigs, name: 'Test Venue', location: '123 Main St', website: 'https://venue.com') }
+      let!(:gig) do
+        create(:gig,
+          band: band_with_gigs,
+          name: 'Test Concert',
+          performance_date: Date.new(2025, 6, 15),
+          start_time: Time.utc(2025, 6, 15, 19, 0, 0),
+          end_time: Time.utc(2025, 6, 15, 22, 0, 0),
+          venue: venue
+        )
+      end
+
+      it 'returns an iCalendar file' do
+        get "/schedule/#{band_with_gigs.slug}/gigs/#{gig.id}/calendar.ics"
+
+        expect(last_response).to be_ok
+        expect(last_response.content_type).to include('text/calendar')
+      end
+
+      it 'sets correct download filename' do
+        get "/schedule/#{band_with_gigs.slug}/gigs/#{gig.id}/calendar.ics"
+
+        expect(last_response.headers['Content-Disposition']).to include('attachment')
+        expect(last_response.headers['Content-Disposition']).to include('.ics')
+      end
+
+      it 'includes band name in the event summary' do
+        get "/schedule/#{band_with_gigs.slug}/gigs/#{gig.id}/calendar.ics"
+
+        expect(last_response.body).to include('SUMMARY:Test Band - Test Venue')
+      end
+
+      it 'includes start and end times in UTC' do
+        get "/schedule/#{band_with_gigs.slug}/gigs/#{gig.id}/calendar.ics"
+
+        expect(last_response.body).to include('DTSTART')
+        expect(last_response.body).to include('DTEND')
+      end
+
+      it 'includes venue information in location' do
+        get "/schedule/#{band_with_gigs.slug}/gigs/#{gig.id}/calendar.ics"
+
+        # The icalendar gem properly escapes commas as \,
+        expect(last_response.body).to include('LOCATION:Test Venue\\, 123 Main St')
+      end
+
+      it 'includes venue website in URL field' do
+        get "/schedule/#{band_with_gigs.slug}/gigs/#{gig.id}/calendar.ics"
+
+        expect(last_response.body).to include('URL;VALUE=URI:https://venue.com')
+      end
+
+      it 'includes band name in description' do
+        get "/schedule/#{band_with_gigs.slug}/gigs/#{gig.id}/calendar.ics"
+
+        expect(last_response.body).to include('Band: Test Band')
+      end
+
+      it 'returns 404 for private events' do
+        private_gig = create(:gig,
+          band: band_with_gigs,
+          name: 'Secret Concert',
+          performance_date: Date.new(2025, 6, 20),
+          start_time: Time.utc(2025, 6, 20, 20, 0, 0),
+          venue: venue,
+          private_event: true
+        )
+
+        get "/schedule/#{band_with_gigs.slug}/gigs/#{private_gig.id}/calendar.ics"
+
+        expect(last_response.status).to eq(404)
+        expect(last_response.body).to include('Calendar not available for private events')
+      end
+
+      it 'handles all-day events when no time is specified' do
+        all_day_gig = create(:gig,
+          band: band_with_gigs,
+          name: 'All Day Festival',
+          performance_date: Date.new(2025, 7, 4),
+          start_time: nil,
+          end_time: nil,
+          venue: venue
+        )
+
+        get "/schedule/#{band_with_gigs.slug}/gigs/#{all_day_gig.id}/calendar.ics"
+
+        expect(last_response).to be_ok
+        expect(last_response.body).to include('DTSTART;VALUE=DATE:20250704')
+      end
+
+      it 'defaults to 2 hours duration when no end time specified' do
+        gig_no_end = create(:gig,
+          band: band_with_gigs,
+          name: 'Concert Without End',
+          performance_date: Date.new(2025, 6, 18),
+          start_time: Time.utc(2025, 6, 18, 20, 0, 0),
+          end_time: nil,
+          venue: venue
+        )
+
+        get "/schedule/#{band_with_gigs.slug}/gigs/#{gig_no_end.id}/calendar.ics"
+
+        expect(last_response).to be_ok
+        expect(last_response.body).to include('DTSTART')
+        expect(last_response.body).to include('DTEND')
+      end
+    end
+
+    context 'when public schedule is disabled' do
+      let!(:gig) { create(:gig, band: disabled_band, performance_date: Date.current + 7.days) }
+
+      it 'returns 404' do
+        get "/schedule/#{disabled_band.slug}/gigs/#{gig.id}/calendar.ics"
+
+        expect(last_response.status).to eq(404)
+      end
+    end
+
+    context 'when gig does not exist' do
+      it 'returns 404' do
+        get "/schedule/#{band_with_gigs.slug}/gigs/99999/calendar.ics"
+
+        expect(last_response.status).to eq(404)
+      end
+    end
+
+    context 'when band does not exist' do
+      it 'returns 404' do
+        get '/schedule/no-such-band/gigs/1/calendar.ics'
+
+        expect(last_response.status).to eq(404)
+      end
+    end
+  end
+
   describe 'Security - No Authentication Required' do
     it 'does not require authentication for public schedule page' do
       clear_cookies

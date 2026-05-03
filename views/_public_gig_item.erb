@@ -39,6 +39,21 @@
                     <% end %>
                 </div>
             <% end %>
+            <%
+              # Determine the calendar route based on context
+              if defined?(@band) && @band
+                calendar_url = "/schedule/#{@band.slug}/gigs/#{gig.id}/calendar.ics"
+              elsif defined?(@user) && @user
+                calendar_url = "/members/#{@user.slug}/gigs/#{gig.id}/calendar.ics"
+              else
+                calendar_url = nil
+              end
+            %>
+            <% if calendar_url %>
+                <div class="gig-calendar" style="margin-top: 8px;">
+                    <a href="<%= calendar_url %>" class="calendar-link" download>Add to Calendar</a>
+                </div>
+            <% end %>
         <% end %>
     </div>
 </div>
