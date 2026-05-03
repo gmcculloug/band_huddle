@@ -662,6 +662,7 @@ class Routes::MobileAPI < Sinatra::Base
           contact_name: venue.contact_name,
           phone_number: venue.phone_number,
           website: venue.website,
+          map_url: venue.map_url,
           notes: venue.notes,
           created_at: venue.created_at.iso8601,
           updated_at: venue.updated_at.iso8601
@@ -697,6 +698,7 @@ class Routes::MobileAPI < Sinatra::Base
         contact_name: venue.contact_name,
         phone_number: venue.phone_number,
         website: venue.website,
+        map_url: venue.map_url,
         notes: venue.notes,
         created_at: venue.created_at.iso8601,
         updated_at: venue.updated_at.iso8601

@@ -34,8 +34,14 @@
         </div>
         <% if @venue.website.present? %>
             <div class="detail-item">
-                <span class="detail-label">Website:</span> 
+                <span class="detail-label">Website:</span>
                 <a href="<%= @venue.website %>" target="_blank" style="color: #667eea; text-decoration: none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 6px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg><%= @venue.website %></a>
+            </div>
+        <% end %>
+        <% if @venue.map_url.present? %>
+            <div class="detail-item">
+                <span class="detail-label">Map Link:</span>
+                <a href="<%= @venue.map_url %>" target="_blank" style="color: #667eea; text-decoration: none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 6px;"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"></path><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>View on Map</a>
             </div>
         <% end %>
     </div>

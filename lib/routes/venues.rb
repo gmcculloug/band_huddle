@@ -270,6 +270,7 @@ class Routes::Venues < Sinatra::Base
           contact_name: source_venue.contact_name,
           phone_number: source_venue.phone_number,
           website: source_venue.website,
+          map_url: source_venue.map_url,
           notes: source_venue.notes,
           band: @band
         )
@@ -337,6 +338,7 @@ class Routes::Venues < Sinatra::Base
       contact_name: @venue.contact_name,
       phone_number: @venue.phone_number,
       website: @venue.website,
+      map_url: @venue.map_url,
       notes: @venue.notes,
       band: target_band
     )

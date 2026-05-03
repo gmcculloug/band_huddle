@@ -14,7 +14,13 @@
                         <div class="weekday"><%= gig.performance_date.strftime('%A') %></div>
                     </div>
                     <div class="gig-details">
-                        <div class="gig-name"><%= gig.private_event ? 'Private Event' : h(gig.name) %></div>
+                        <div class="gig-name">
+                            <% if !gig.private_event && gig.venue&.website.present? %>
+                                <a href="<%= h(gig.venue.website) %>" target="_blank" rel="noopener noreferrer"><%= h(gig.name) %></a>
+                            <% else %>
+                                <%= gig.private_event ? 'Private Event' : h(gig.name) %>
+                            <% end %>
+                        </div>
                         <% unless gig.private_event %>
                             <% if gig.start_time %>
                                 <div class="gig-time">
@@ -28,11 +34,8 @@
                                 <div class="gig-venue">
                                     📍 <span class="venue-name"><%= h(gig.venue.name) %></span>
                                     <% if gig.venue.location %>
-                                        <span class="venue-location"> — <%= h(gig.venue.location) %></span>
-                                    <% end %>
-                                    <% if gig.venue.website.present? %>
-                                        <br>
-                                        🔗 <a href="<%= h(gig.venue.website) %>" target="_blank" rel="noopener noreferrer"><%= h(gig.venue.website) %></a>
+                                        <% map_link = gig.venue.map_url.present? ? gig.venue.map_url : "https://www.google.com/maps/search/?api=1&query=#{h(gig.venue.location)}" %>
+                                        <span class="venue-location"> — <a href="<%= h(map_link) %>" target="_blank" rel="noopener noreferrer"><%= h(gig.venue.location) %></a></span>
                                     <% end %>
                                 </div>
                             <% end %>

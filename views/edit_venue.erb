@@ -31,6 +31,12 @@
     </div>
 
     <div class="form-group">
+        <label for="venue_map_url">Map URL</label>
+        <input type="url" id="venue_map_url" name="venue[map_url]" value="<%= @venue.map_url %>" placeholder="https://maps.google.com/...">
+        <small style="display: block; margin-top: 4px; color: #666;">Optional: Direct link to the venue on a map (e.g., Google Maps link). If not provided, the location will link to Google Maps search.</small>
+    </div>
+
+    <div class="form-group">
         <label for="venue_notes">Notes</label>
         <textarea id="venue_notes" name="venue[notes]" rows="4" placeholder="Any additional notes about the venue (capacity, setup requirements, parking info, etc.)"><%= @venue.notes %></textarea>
     </div>
