@@ -32,10 +32,14 @@
                             <% end %>
                             <% if gig.venue %>
                                 <div class="gig-venue">
-                                    📍 <span class="venue-name"><%= h(gig.venue.name) %></span>
+                                    📍
+                                    <% unless gig.name == gig.venue.name %>
+                                        <span class="venue-name"><%= h(gig.venue.name) %></span>
+                                    <% end %>
                                     <% if gig.venue.location %>
                                         <% map_link = gig.venue.map_url.present? ? gig.venue.map_url : "https://www.google.com/maps/search/?api=1&query=#{h(gig.venue.location)}" %>
-                                        <span class="venue-location"> — <a href="<%= h(map_link) %>" target="_blank" rel="noopener noreferrer"><%= h(gig.venue.location) %></a></span>
+                                        <% separator = (gig.name == gig.venue.name) ? '' : ' — ' %>
+                                        <span class="venue-location"><%= separator %><a href="<%= h(map_link) %>" target="_blank" rel="noopener noreferrer"><%= h(gig.venue.location) %></a></span>
                                     <% end %>
                                 </div>
                             <% end %>
