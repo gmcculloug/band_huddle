@@ -52,13 +52,8 @@
                 <button type="button" class="time-preset-btn" data-time="21:00">9:00 PM</button>
             </div>
             <div class="time-input-row">
-                <%
-                  # Display time in user's timezone
-                  user_timezone_time = @practice.timezone_aware_start_time(current_user.user_timezone) if @practice.start_time
-                %>
                 <input type="text" id="practice_start_time" name="start_time" placeholder="Select practice time..." readonly
-                       data-time="<%= user_timezone_time&.strftime('%H:%M') %>"
-                       value="<%= user_timezone_time&.strftime('%-l:%M %p') if user_timezone_time %>">
+                       data-utc="<%= @practice.start_time&.utc&.iso8601 %>">
                 <select id="practice_duration" name="duration" class="duration-selector">
                     <option value="">Duration</option>
                     <option value="60" <%= 'selected' if @practice.duration == 60 %>>1 hour</option>
@@ -159,15 +154,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const presetTimeBtns = document.querySelectorAll('.time-preset-btn');
     let startTimePicker;
 
-    // Initialize Flatpickr for time input
-    const startTime24 = startTimeInput.getAttribute('data-time');
+    // Initialize Flatpickr for time input, converting stored UTC to browser local time
+    const utcTimeStr = startTimeInput.getAttribute('data-utc');
+    const defaultDate = utcTimeStr ? new Date(utcTimeStr) : null;
+    if (defaultDate) {
+        const hours = defaultDate.getHours().toString().padStart(2, '0');
+        const minutes = defaultDate.getMinutes().toString().padStart(2, '0');
+        startTimeInput.setAttribute('data-time', `${hours}:${minutes}`);
+    }
     startTimePicker = flatpickr(startTimeInput, {
         enableTime: true,
         noCalendar: true,
         dateFormat: "h:i K",
         time_24hr: false,
         minuteIncrement: 15,
-        defaultDate: startTime24 ? convertTo12Hour(startTime24) : null,
+        defaultDate: defaultDate,
         onChange: function(selectedDates, dateStr) {
             // Update data-time attribute in real-time
             if (selectedDates.length > 0) {
@@ -238,23 +239,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Form submission - convert display values to 24-hour format
+    // Form submission - convert local time to UTC ISO string for server storage
     document.querySelector('form').addEventListener('submit', function() {
         const startTime24 = startTimeInput.getAttribute('data-time');
 
         if (startTime24) {
-            startTimeInput.name = 'start_time';
-            startTimeInput.value = startTime24;
+            const [hours, minutes] = startTime24.split(':').map(Number);
+            // Use a fixed reference date; only the time-of-day matters
+            const dt = new Date(2000, 0, 1, hours, minutes, 0, 0);
+            startTimeInput.value = dt.toISOString();
+        } else {
+            startTimeInput.value = '';
         }
     });
-
-    function convertTo12Hour(time24) {
-        if (!time24) return null;
-        const [hours, minutes] = time24.split(':');
-        const date = new Date();
-        date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        return date;
-    }
 
     function initializeFormState() {
         const startTime24 = startTimeInput.getAttribute('data-time');

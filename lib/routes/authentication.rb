@@ -144,8 +144,7 @@ class Routes::Authentication < Sinatra::Base
           id: current_user.id,
           username: current_user.username,
           display_name: current_user.display_name_or_fallback,
-          email: current_user.email,
-          timezone: current_user.timezone
+          email: current_user.email
         },
         current_band: current_band ? {
           id: current_band.id,
@@ -188,7 +187,6 @@ class Routes::Authentication < Sinatra::Base
           username: current_user.username,
           display_name: current_user.display_name_or_fallback,
           email: current_user.email,
-          timezone: current_user.timezone,
           created_at: current_user.created_at.iso8601
         },
         bands: current_user.bands.map { |band|

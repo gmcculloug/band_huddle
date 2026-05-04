@@ -35,7 +35,7 @@
                                     <span><%= practice.title.present? ? practice.title : "Practice Session" %></span>
                                     <% if practice.best_day && practice.best_practice_date && practice.start_time %>
                                         <span style="background: rgba(56, 161, 105, 0.1); color: #38a169; padding: 4px 8px; border-radius: 12px; font-size: 0.9em; font-weight: 500;">
-                                            <%= practice.status == 'finalized' ? 'Selected' : 'Best' %>: <strong><%= practice.best_day %></strong> <strong><%= practice.best_practice_date.strftime('%b %d') %></strong> @ <%= practice.formatted_time_range(current_user.user_timezone) %>
+                                            <%= practice.status == 'finalized' ? 'Selected' : 'Best' %>: <strong><%= practice.best_day %></strong> <strong><%= practice.best_practice_date.strftime('%b %d') %></strong> @ <span class="local-time" data-utc="<%= practice.start_time.utc.iso8601 %>"><%= practice.start_time.utc.strftime('%I:%M %p UTC') %></span><% if practice.end_time %> - <span class="local-time" data-utc="<%= practice.end_time.utc.iso8601 %>"><%= practice.end_time.utc.strftime('%I:%M %p UTC') %></span><% end %>
                                         </span>
                                     <% end %>
                                 </div>

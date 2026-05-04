@@ -88,7 +88,7 @@
             <div>
                 <h4 style="color: #4a5568; margin-bottom: 5px;">Start Time</h4>
                 <span style="color: #2d3748; font-weight: 600; font-size: 1.1em;">
-                    <%= @practice.formatted_time_range(current_user.user_timezone) || (@practice.start_time ? @practice.timezone_aware_start_time(current_user.user_timezone).strftime('%I:%M %p') : '') %>
+                    <span class="local-time" data-utc="<%= @practice.start_time.utc.iso8601 %>"><%= @practice.start_time.utc.strftime('%I:%M %p UTC') %></span><% if @practice.end_time %> - <span class="local-time" data-utc="<%= @practice.end_time.utc.iso8601 %>"><%= @practice.end_time.utc.strftime('%I:%M %p UTC') %></span><% end %>
                 </span>
             </div>
         <% end %>

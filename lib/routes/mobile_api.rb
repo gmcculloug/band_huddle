@@ -128,7 +128,6 @@ class Routes::MobileAPI < Sinatra::Base
         id: current_user.id,
         username: current_user.username,
         email: current_user.email,
-        timezone: current_user.timezone,
         oauth_provider: current_user.oauth_provider
       },
       current_band: current_band ? {

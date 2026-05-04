@@ -31,7 +31,7 @@
                                     (<%= practice.days_of_week_for_period.length %> days)
                                 <% end %>
                                 <% if practice.start_time %>
-                                    • <%= practice.formatted_time_range(current_user.user_timezone) %>
+                                    • <span class="local-time" data-utc="<%= practice.start_time.utc.iso8601 %>"><%= practice.start_time.utc.strftime('%I:%M %p UTC') %></span><% if practice.end_time %> - <span class="local-time" data-utc="<%= practice.end_time.utc.iso8601 %>"><%= practice.end_time.utc.strftime('%I:%M %p UTC') %></span><% end %>
                                 <% end %>
                             </div>
                         </span>
