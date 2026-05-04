@@ -1682,7 +1682,7 @@
                         </div>
                         <div class="user-actions">
                             <div class="user-info-section">
-                                <span class="welcome-text">Welcome, <%= current_user.display_name_or_fallback %>!</span>
+                                <span class="welcome-text">Welcome, <% if current_user.public_profile_enabled? && current_user.slug.present? %><a href="/members/<%= current_user.slug %>" style="color: inherit; text-decoration: underline;" title="View your public profile" target="_blank" rel="noopener noreferrer"><%= current_user.display_name_or_fallback %></a><% else %><%= current_user.display_name_or_fallback %><% end %>!</span>
                                 <div class="user-controls-line">
                                     <a href="/logout" class="logout-link">Logout</a>
                                 </div>
