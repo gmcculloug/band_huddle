@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     postgresql-client \
     libpq-dev \
+    libyaml-dev \
     curl \
     openssl \
     && rm -rf /var/lib/apt/lists/*
