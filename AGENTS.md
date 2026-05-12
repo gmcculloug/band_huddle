@@ -64,15 +64,34 @@ New endpoints go in the correct file. Do not add mobile-style `data`/`meta` wrap
 
 ### UTC Timezone Storage
 
-All timestamps are stored in UTC. Convert to user timezone only at display time using `current_user.user_timezone`. Never store local time in the database.
+All timestamps are stored in UTC. Conversion to the user's local timezone happens **client-side in the browser** — never server-side. Never store local time in the database.
+
+**Storing** — parse and store as UTC:
 
 ```ruby
-# Storing — convert to UTC
-self.start_time = Time.parse(params[:time]).in_time_zone(user_timezone).utc
-
-# Displaying — convert from UTC
-start_time.in_time_zone('UTC').in_time_zone(user_timezone)
+self.start_time = Time.parse(params[:time]).utc
 ```
+
+**Displaying** — render a `<span class="local-time">` with a `data-utc` ISO8601 attribute; the fallback text is the UTC value:
+
+```erb
+<span class="local-time" data-utc="<%= record.start_time.utc.iso8601 %>">
+  <%= record.start_time.utc.strftime('%I:%M %p UTC') %>
+</span>
+```
+
+**Browser conversion** — JavaScript in `layout.erb` rewrites every `.local-time` element on `DOMContentLoaded` using the browser's local timezone automatically:
+
+```javascript
+document.querySelectorAll('.local-time').forEach(function(el) {
+  var d = new Date(el.dataset.utc);
+  el.textContent = d.toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+  });
+});
+```
+
+This produces output like "4:00 PM EDT" without any server-side timezone lookup. Do not pass user timezone to model methods for display — use the `.local-time` pattern instead.
 
 ### Soft-Delete (Archivable)
 
