@@ -1,7 +1,17 @@
 <div class="card">
     <div class="header">
-        <h1><%= h(@band.name) %></h1>
-        <p>Upcoming Shows & Performances</p>
+        <% if @band.logo_filename.present? %>
+            <img src="/uploads/band_logos/<%= @band.logo_filename %>"
+                 alt="<%= h(@band.name) %>"
+                 fetchpriority="high"
+                 style="max-height: <%= @band.show_band_name ? '200px' : '260px' %>; max-width: 90%; object-fit: contain; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+            <% if @band.show_band_name %>
+                <h1><%= h(@band.name) %></h1>
+            <% end %>
+        <% else %>
+            <h1><%= h(@band.name) %></h1>
+        <% end %>
+        <p>Upcoming Shows &amp; Performances</p>
     </div>
 
     <div class="content">

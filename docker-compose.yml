@@ -61,6 +61,7 @@ services:
     volumes:
       # Mount logs directory
       - ./logs:/app/logs:Z
+      - band_uploads:/app/public/uploads
     environment:
       - RACK_ENV=production
       - PORT=4567
@@ -114,3 +115,4 @@ services:
 volumes:
   postgres_data:
   valkey_data:
+  band_uploads:

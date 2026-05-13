@@ -483,9 +483,45 @@ class Routes::Bands < Sinatra::Base
 
     public_schedule_enabled = params[:public_schedule_enabled] == '1'
 
-    @band.update!(public_schedule_enabled: public_schedule_enabled)
+    band_updates = {
+      public_schedule_enabled: public_schedule_enabled,
+      show_band_name: params[:show_band_name] == '1'
+    }
+
+    if params[:remove_logo] == '1' && @band.logo_filename.present?
+      _delete_band_logo(@band.logo_filename)
+      band_updates[:logo_filename] = nil
+    end
+
+    if params[:logo_image] && params[:logo_image][:filename].present?
+      file = params[:logo_image]
+      ext  = File.extname(file[:filename]).downcase
+      unless %w[.jpg .jpeg .png .gif .webp].include?(ext)
+        @public_schedule_error = "Logo must be an image file (JPG, PNG, GIF, or WebP)"
+        return erb :edit_band
+      end
+      if file[:tempfile].size > 5 * 1024 * 1024
+        @public_schedule_error = "Logo must be smaller than 5 MB"
+        return erb :edit_band
+      end
+      _delete_band_logo(@band.logo_filename) if @band.logo_filename.present?
+      filename = "#{@band.id}-#{SecureRandom.hex(8)}#{ext}"
+      dir = File.join(settings.public_folder, 'uploads', 'band_logos')
+      FileUtils.mkdir_p(dir)
+      File.open(File.join(dir, filename), 'wb') { |f| f.write(file[:tempfile].read) }
+      band_updates[:logo_filename] = filename
+    end
+
+    @band.update!(band_updates)
 
     @public_schedule_success = "Public schedule settings updated successfully"
     erb :edit_band
+  end
+
+  private
+
+  def _delete_band_logo(filename)
+    path = File.join(settings.public_folder, 'uploads', 'band_logos', filename)
+    File.delete(path) if File.exist?(path)
   end
 end

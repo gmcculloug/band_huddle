@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= @band ? h(@band.name) : @user ? h(@user.display_name) : 'Schedule' %> - Band Huddle</title>
+    <% if @band&.logo_filename.present? %>
+        <link rel="preload" as="image" href="/uploads/band_logos/<%= @band.logo_filename %>">
+    <% end %>
     <style>
         * {
             box-sizing: border-box;
