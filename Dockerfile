@@ -24,8 +24,8 @@ RUN bundle install
 # Copy application code
 COPY . .
 
-# Create directories for logs and SSL certificates
-RUN mkdir -p /app/logs /app/ssl
+# Create directories for logs, SSL certificates, and uploads
+RUN mkdir -p /app/logs /app/ssl /app/public/uploads/band_logos
 
 # Generate SSL certificate if not provided via volume mount
 RUN if [ ! -f /app/ssl/server.crt ]; then \

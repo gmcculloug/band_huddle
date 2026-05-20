@@ -13,9 +13,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
   valkey:
     image: valkey/valkey:8.0-alpine
     ports:
@@ -25,9 +26,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     command: >
       valkey-server
       --appendonly yes
@@ -108,6 +110,7 @@ services:
       - ./ssl:/etc/nginx/ssl:Z
       - ./logs/nginx:/var/log/nginx:Z
       - ./certbot/www:/var/www/certbot:Z
+      - band_uploads:/var/www/uploads:Z
     depends_on:
       - band-huddle
     restart: unless-stopped
