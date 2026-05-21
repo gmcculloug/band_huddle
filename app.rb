@@ -57,61 +57,45 @@ require_relative 'lib/routes/public_member'
 enable :static
 use Rack::MethodOverride
 
-# Conditional session store configuration
-if ENV['VALKEY_ENABLED'] == 'true'
-  # Valkey session store configuration
-  # Note: Connection pooling can be added later if needed using ConnectionPool
+# Helper method to validate and get session secret
+def self.validate_session_secret
+  is_production = ENV['RACK_ENV'] == 'production' || ENV['APP_ENV'] == 'production'
 
-  # Session secret validation (keep existing production logic)
-  if ENV['RACK_ENV'] == 'production' || ENV['APP_ENV'] == 'production'
+  if is_production
     session_secret = ENV['SESSION_SECRET']
+
     if session_secret.nil? || session_secret.empty?
       puts "ERROR: SESSION_SECRET environment variable must be set in production"
       puts "Generate a strong secret with: openssl rand -hex 64"
       exit 1
     end
+
     if session_secret.length < 32
       puts "ERROR: SESSION_SECRET must be at least 32 characters long"
       puts "Current length: #{session_secret.length} characters"
       puts "Generate a strong secret with: openssl rand -hex 64"
       exit 1
     end
-  else
-    session_secret = ENV['SESSION_SECRET'] || 'development_secret_key_not_for_production_use'
-  end
 
+    session_secret
+  else
+    ENV['SESSION_SECRET'] || 'development_secret_key_not_for_production_use'
+  end
+end
+
+# Conditional session store configuration
+session_secret = validate_session_secret
+
+if ENV['VALKEY_ENABLED'] == 'true'
+  # Valkey session store configuration
   use Rack::Session::Redis,
       redis_server: "redis://#{ENV['VALKEY_HOST'] || 'valkey'}:#{ENV['VALKEY_PORT'] || 6379}/#{ENV['VALKEY_DB'] || 0}",
       key: '_band_huddle_session',
       secret: session_secret
-
 else
-  # Use Sinatra's built-in cookie sessions (existing behavior)
+  # Use Sinatra's built-in cookie sessions
   enable :sessions
-
-  # Session secret configuration with production security requirements
-  if ENV['RACK_ENV'] == 'production' || ENV['APP_ENV'] == 'production'
-    # In production, SESSION_SECRET must be set and strong
-    session_secret = ENV['SESSION_SECRET']
-
-    if session_secret.nil? || session_secret.empty?
-      puts "ERROR: SESSION_SECRET environment variable must be set in production"
-      puts "Generate a strong secret with: openssl rand -hex 64"
-      exit 1
-    end
-
-    if session_secret.length < 32
-      puts "ERROR: SESSION_SECRET must be at least 32 characters long"
-      puts "Current length: #{session_secret.length} characters"
-      puts "Generate a strong secret with: openssl rand -hex 64"
-      exit 1
-    end
-
-    set :session_secret, session_secret
-  else
-    # In development/test, allow fallback for convenience
-    set :session_secret, ENV['SESSION_SECRET'] || 'development_secret_key_not_for_production_use'
-  end
+  set :session_secret, session_secret
 end
 
 set :public_folder, File.dirname(__FILE__) + '/public'

@@ -16,62 +16,26 @@ class Routes::Gigs < Sinatra::Base
 
   get '/gigs' do
     require_login
-
-    # If user has no bands, redirect to create or join a band
-    if user_bands.empty?
-      redirect '/bands/new?first_band=true'
-    end
-
-    # If no band is selected, redirect to band selection
-    unless current_band
-      redirect '/bands'
-    end
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(breadcrumb_for_section('gigs'))
 
-    # Determine and store view mode preference
-    if params[:view]
-      # User explicitly selected a view, store in session
-      session[:gig_view_mode] = params[:view]
-    end
-
-    # Get view mode from session or default to 'all' for users with multiple bands
-    view_mode = session[:gig_view_mode] || (current_user.bands.count > 1 ? 'all' : 'current')
-    view_current = view_mode == 'current' && current_user.bands.count > 1
-    view_all = !view_current && current_user.bands.count > 1
-
-    # Conditional data fetching
-    if view_all
-      user_band_ids = current_user.bands.pluck(:id)
-      all_gigs = Gig.joins(:band).where(bands: { id: user_band_ids }).includes(:venue, :band)
-    else
-      all_gigs = filter_by_current_band(Gig).includes(:venue)
-    end
+    # Determine view mode and fetch gigs
+    view_mode = determine_gig_view_mode
+    all_gigs = fetch_gigs_for_view_mode(view_mode)
 
     today = Date.current
     @upcoming_gigs = all_gigs.where('performance_date >= ?', today).order(:performance_date) || []
-
-    # Count of past gigs for display
     @past_gigs_count = all_gigs.where('performance_date < ?', today).count
-
-    @view_mode = view_all ? 'all' : 'current'
+    @view_mode = view_mode == 'all' && current_user.bands.count > 1 ? 'all' : 'current'
 
     erb :gigs
   end
 
   get '/gigs/past' do
     require_login
-
-    # If user has no bands, redirect to create or join a band
-    if user_bands.empty?
-      redirect '/bands/new?first_band=true'
-    end
-
-    # If no band is selected, redirect to band selection
-    unless current_band
-      redirect '/bands'
-    end
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(
@@ -79,38 +43,20 @@ class Routes::Gigs < Sinatra::Base
       { label: 'Past Gigs', icon: '', url: nil }
     )
 
-    # Determine and store view mode preference
-    if params[:view]
-      # User explicitly selected a view, store in session
-      session[:gig_view_mode] = params[:view]
-    end
-
-    # Get view mode from session or default to 'all' for users with multiple bands
-    view_mode = session[:gig_view_mode] || (current_user.bands.count > 1 ? 'all' : 'current')
-    view_current = view_mode == 'current' && current_user.bands.count > 1
-    view_all = !view_current && current_user.bands.count > 1
-
-    # Conditional data fetching
-    if view_all
-      user_band_ids = current_user.bands.pluck(:id)
-      all_gigs = Gig.joins(:band).where(bands: { id: user_band_ids }).includes(:venue, :band)
-    else
-      all_gigs = filter_by_current_band(Gig).includes(:venue)
-    end
+    # Determine view mode and fetch gigs
+    view_mode = determine_gig_view_mode
+    all_gigs = fetch_gigs_for_view_mode(view_mode)
 
     today = Date.current
-
-    # Past gigs: performance_date is in the past
     @past_gigs = all_gigs.where('performance_date < ?', today).order(performance_date: :desc) || []
-
-    @view_mode = view_all ? 'all' : 'current'
+    @view_mode = view_mode == 'all' && current_user.bands.count > 1 ? 'all' : 'current'
 
     erb :past_gigs
   end
 
   get '/gigs/new' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(
@@ -125,7 +71,7 @@ class Routes::Gigs < Sinatra::Base
 
   post '/gigs' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     # Parse start_time and end_time as UTC (frontend sends ISO string via .toISOString())
     start_time = params[:start_time].presence ? Time.parse(params[:start_time]).utc : nil

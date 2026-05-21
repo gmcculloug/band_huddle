@@ -94,15 +94,7 @@ class User < ActiveRecord::Base
   # Ensures slug uniqueness when manually updated
   # Appends random number if the desired slug is taken
   def ensure_slug_uniqueness(desired_slug)
-    base_slug = desired_slug.parameterize
-    candidate_slug = base_slug
-
-    # Ensure uniqueness by appending random numbers if needed
-    while User.where(slug: candidate_slug).where.not(id: id).exists?
-      candidate_slug = "#{base_slug}-#{rand(1000..9999)}"
-    end
-
-    candidate_slug
+    generate_unique_slug(desired_slug.parameterize)
   end
 
   private
@@ -124,17 +116,18 @@ class User < ActiveRecord::Base
   end
 
   # Generates slug after create when username is available
-  # Default value is the user's username (parameterized)
-  # If slug already exists, append random number to make it unique
   def generate_slug_after_create
-    base_slug = username.parameterize
+    update_column(:slug, generate_unique_slug(username.parameterize))
+  end
+
+  # Shared method to generate unique slug by appending random numbers if needed
+  def generate_unique_slug(base_slug)
     candidate_slug = base_slug
 
-    # Ensure uniqueness by appending random numbers if needed
     while User.where(slug: candidate_slug).where.not(id: id).exists?
       candidate_slug = "#{base_slug}-#{rand(1000..9999)}"
     end
 
-    update_column(:slug, candidate_slug)
+    candidate_slug
   end
 end

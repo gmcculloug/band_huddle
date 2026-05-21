@@ -16,7 +16,7 @@ class Routes::Songs < Sinatra::Base
 
   get '/songs' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(breadcrumb_for_section('songs'))
@@ -56,7 +56,7 @@ class Routes::Songs < Sinatra::Base
 
   get '/songs/new' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(
@@ -70,7 +70,7 @@ class Routes::Songs < Sinatra::Base
   # Copy from catalog routes - must come before /songs/:id
   get '/songs/copy_from_catalog' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(
@@ -97,7 +97,7 @@ class Routes::Songs < Sinatra::Base
 
   post '/songs/copy_from_catalog' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     song_catalog_ids = params[:song_catalog_ids] || []
 
@@ -121,7 +121,7 @@ class Routes::Songs < Sinatra::Base
 
   post '/songs/copy_single_from_catalog' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     song_catalog_id = params[:song_catalog_id]
     search_term = params[:search] || ''
@@ -148,7 +148,7 @@ class Routes::Songs < Sinatra::Base
 
   post '/songs' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     song = Song.new(params[:song])
     # If band_ids provided, associate accordingly but ensure current_band is included by default
@@ -176,7 +176,7 @@ class Routes::Songs < Sinatra::Base
 
   get '/songs/archived' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(
@@ -190,7 +190,7 @@ class Routes::Songs < Sinatra::Base
 
   post '/songs/:id/archive' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     song = current_band.songs.find(params[:id])
     song.archive!
@@ -200,7 +200,7 @@ class Routes::Songs < Sinatra::Base
 
   post '/songs/:id/unarchive' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     song = current_band.songs.find(params[:id])
     song.unarchive!

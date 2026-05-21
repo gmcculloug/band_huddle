@@ -23,15 +23,7 @@ class Routes::Authentication < Sinatra::Base
 
     if user && user.authenticate(params[:password])
       session[:user_id] = user.id
-
-      # Restore the last selected band if it exists and user still has access to it
-      if user.last_selected_band && user.bands.include?(user.last_selected_band)
-        session[:band_id] = user.last_selected_band.id
-      elsif user.bands.any?
-        # If no saved band or user no longer has access, select the first band
-        session[:band_id] = user.bands.first.id
-      end
-
+      restore_or_select_band_for_user(user)
       redirect '/gigs'
     else
       @error = "Invalid username or password"
@@ -90,18 +82,7 @@ class Routes::Authentication < Sinatra::Base
 
     if user && user.authenticate(params[:password])
       session[:user_id] = user.id
-
-      # Restore the last selected band if it exists and user still has access to it
-      if user.last_selected_band && user.bands.include?(user.last_selected_band)
-        session[:band_id] = user.last_selected_band.id
-        selected_band = user.last_selected_band
-      elsif user.bands.any?
-        # If no saved band or user no longer has access, select the first band
-        session[:band_id] = user.bands.first.id
-        selected_band = user.bands.first
-      else
-        selected_band = nil
-      end
+      selected_band = restore_or_select_band_for_user(user)
 
       # Return user data with bands for mobile app
       {

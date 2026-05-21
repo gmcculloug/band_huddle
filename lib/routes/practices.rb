@@ -16,16 +16,7 @@ class Routes::Practices < Sinatra::Base
 
   get '/practices' do
     require_login
-
-    # If user has no bands, redirect to create or join a band
-    if user_bands.empty?
-      redirect '/bands/new?first_band=true'
-    end
-
-    # If no band is selected, redirect to band selection
-    unless current_band
-      redirect '/bands'
-    end
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(breadcrumb_for_section('practices'))
@@ -44,16 +35,7 @@ class Routes::Practices < Sinatra::Base
 
   get '/practices/past' do
     require_login
-
-    # If user has no bands, redirect to create or join a band
-    if user_bands.empty?
-      redirect '/bands/new?first_band=true'
-    end
-
-    # If no band is selected, redirect to band selection
-    unless current_band
-      redirect '/bands'
-    end
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(
@@ -72,7 +54,7 @@ class Routes::Practices < Sinatra::Base
 
   get '/practices/new' do
     require_login
-    return redirect '/practices' unless current_band
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(
@@ -86,7 +68,7 @@ class Routes::Practices < Sinatra::Base
 
   post '/practices' do
     require_login
-    return redirect '/practices' unless current_band
+    ensure_band_context
 
     # Parse the start and end dates
     unless params[:start_date]
@@ -156,7 +138,7 @@ class Routes::Practices < Sinatra::Base
 
   get '/practices/:id' do
     require_login
-    return redirect '/practices' unless current_band
+    ensure_band_context
 
     @practice = current_band.practices.find_by(id: params[:id])
     return redirect '/practices' unless @practice
@@ -178,7 +160,7 @@ class Routes::Practices < Sinatra::Base
 
   get '/practices/:id/edit' do
     require_login
-    return redirect '/practices' unless current_band
+    ensure_band_context
 
     @practice = current_band.practices.find_by(id: params[:id])
     return redirect '/practices' unless @practice
@@ -203,7 +185,7 @@ class Routes::Practices < Sinatra::Base
 
   post '/practices/:id/responses' do
     require_login
-    return redirect '/practices' unless current_band
+    ensure_band_context
 
     @practice = current_band.practices.find_by(id: params[:id])
     return redirect '/practices' unless @practice
@@ -245,7 +227,7 @@ class Routes::Practices < Sinatra::Base
 
   post '/practices/:id/availability' do
     require_login
-    return redirect '/practices' unless current_band
+    ensure_band_context
 
     @practice = current_band.practices.find_by(id: params[:id])
     return redirect '/practices' unless @practice
@@ -288,7 +270,7 @@ class Routes::Practices < Sinatra::Base
 
   post '/practices/:id/finalize' do
     require_login
-    return redirect '/practices' unless current_band
+    ensure_band_context
 
     @practice = current_band.practices.find_by(id: params[:id])
     return redirect '/practices' unless @practice
@@ -305,7 +287,7 @@ class Routes::Practices < Sinatra::Base
 
   post '/practices/:id/reopen' do
     require_login
-    return redirect '/practices' unless current_band
+    ensure_band_context
 
     @practice = current_band.practices.find_by(id: params[:id])
     return redirect '/practices' unless @practice
@@ -322,7 +304,7 @@ class Routes::Practices < Sinatra::Base
 
   put '/practices/:id' do
     require_login
-    return redirect '/practices' unless current_band
+    ensure_band_context
 
     @practice = current_band.practices.find_by(id: params[:id])
     return redirect '/practices' unless @practice
@@ -416,7 +398,7 @@ class Routes::Practices < Sinatra::Base
 
   delete '/practices/:id' do
     require_login
-    return redirect '/practices' unless current_band
+    ensure_band_context
 
     @practice = current_band.practices.find_by(id: params[:id])
     return redirect '/practices' unless @practice

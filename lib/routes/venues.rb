@@ -16,7 +16,7 @@ class Routes::Venues < Sinatra::Base
 
   get '/venues' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(breadcrumb_for_section('venues'))
@@ -27,7 +27,7 @@ class Routes::Venues < Sinatra::Base
 
   get '/venues/new' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(
@@ -40,7 +40,7 @@ class Routes::Venues < Sinatra::Base
 
   post '/venues' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     venue = Venue.new(params[:venue])
     venue.band = current_band
@@ -63,7 +63,7 @@ class Routes::Venues < Sinatra::Base
 
   get '/venues/archived' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     # Set breadcrumbs
     set_breadcrumbs(
@@ -77,7 +77,7 @@ class Routes::Venues < Sinatra::Base
 
   get '/venues/:id' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     @venue = filter_by_current_band(Venue).find(params[:id])
 
@@ -112,7 +112,7 @@ class Routes::Venues < Sinatra::Base
 
   get '/venues/:id/edit' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     @venue = filter_by_current_band(Venue).find(params[:id])
 
@@ -149,7 +149,7 @@ class Routes::Venues < Sinatra::Base
 
   put '/venues/:id' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     @venue = filter_by_current_band(Venue).find(params[:id])
 
@@ -198,7 +198,7 @@ class Routes::Venues < Sinatra::Base
 
   delete '/venues/:id' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     venue = filter_by_current_band(Venue).find(params[:id])
 
@@ -213,7 +213,7 @@ class Routes::Venues < Sinatra::Base
 
   post '/venues/:id/archive' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     venue = filter_by_current_band(Venue).find(params[:id])
     venue.archive!
@@ -223,7 +223,7 @@ class Routes::Venues < Sinatra::Base
 
   post '/venues/:id/unarchive' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
 
     venue = filter_by_current_band(Venue).find(params[:id])
     venue.unarchive!
@@ -287,7 +287,7 @@ class Routes::Venues < Sinatra::Base
   # Copy single venue to band
   get '/venues/:venue_id/copy' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
     
     @venue = filter_by_current_band(Venue).find(params[:venue_id])
     
@@ -304,7 +304,7 @@ class Routes::Venues < Sinatra::Base
 
   post '/venues/:venue_id/copy' do
     require_login
-    return redirect '/gigs' unless current_band
+    ensure_band_context
     
     @venue = filter_by_current_band(Venue).find(params[:venue_id])
     

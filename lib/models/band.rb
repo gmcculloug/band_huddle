@@ -29,17 +29,15 @@ class Band < ActiveRecord::Base
   def owner?
     owners.exists?
   end
-  
+
   def owned_by?(user)
     return false unless user
     user_bands.exists?(user_id: user.id, role: 'owner')
   end
-  
-  def owner_of?(user)
-    return false unless user
-    user_bands.exists?(user_id: user.id, role: 'owner')
-  end
-  
+
+  # Alias for clarity - same as owned_by?
+  alias_method :owner_of?, :owned_by?
+
   def owner_users
     owners
   end

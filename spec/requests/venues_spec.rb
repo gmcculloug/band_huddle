@@ -20,12 +20,23 @@ RSpec.describe 'Venues API', type: :request do
       expect(last_response.location).to end_with('/login')
     end
 
-    it 'redirects to gigs when no band selected' do
+    it 'redirects to create first band when user has no bands' do
+      # Login without any bands
+      post '/test_auth', user_id: user.id
+      get '/venues'
+      expect(last_response).to be_redirect
+      expect(last_response.location).to end_with('/bands/new?first_band=true')
+    end
+
+    it 'redirects to band selection when user has bands but none selected' do
+      # Create bands by referencing them (let blocks are lazy)
+      band
+      other_band
       # Login without selecting a band
       post '/test_auth', user_id: user.id
       get '/venues'
       expect(last_response).to be_redirect
-      expect(last_response.location).to end_with('/gigs')
+      expect(last_response.location).to end_with('/bands')
     end
 
     it 'returns only venues for the current band' do

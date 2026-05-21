@@ -45,6 +45,13 @@ module ApplicationHelpers
     end
   end
 
+  # Helper to ensure user has bands and a band is selected
+  # Redirects appropriately if conditions not met
+  def ensure_band_context
+    redirect '/bands/new?first_band=true' if user_bands.empty?
+    redirect '/bands' unless current_band
+  end
+
   def current_band
     if settings.test?
       # In test mode, try to get band from test session
@@ -300,6 +307,50 @@ module ApplicationHelpers
   def configured_oauth_providers
     require_relative '../services/oauth_service'
     OauthService.configured_providers
+  end
+
+  # Helper for rendering time in local timezone
+  def local_time_tag(time)
+    return '' unless time
+    utc_time = time.utc
+    %(<span class="local-time" data-utc="#{utc_time.iso8601}">#{utc_time.strftime('%I:%M %p UTC')}</span>)
+  end
+
+  # Helper for gig view mode handling
+  def determine_gig_view_mode
+    return 'current' unless logged_in? && current_user.bands.count > 1
+
+    # Store user's explicit view preference
+    session[:gig_view_mode] = params[:view] if params[:view]
+
+    # Return session value or default to 'all' for multi-band users
+    session[:gig_view_mode] || 'all'
+  end
+
+  # Helper for fetching gigs based on view mode
+  def fetch_gigs_for_view_mode(view_mode)
+    if view_mode == 'all' && current_user.bands.count > 1
+      user_band_ids = current_user.bands.pluck(:id)
+      Gig.joins(:band).where(bands: { id: user_band_ids }).includes(:venue, :band)
+    elsif current_band
+      filter_by_current_band(Gig).includes(:venue)
+    else
+      Gig.none
+    end
+  end
+
+  # Helper for restoring user's last band or selecting first band
+  def restore_or_select_band_for_user(user)
+    if user.last_selected_band && user.bands.include?(user.last_selected_band)
+      session[:band_id] = user.last_selected_band.id
+      user.last_selected_band
+    elsif user.bands.any?
+      first_band = user.bands.first
+      session[:band_id] = first_band.id
+      first_band
+    else
+      nil
+    end
   end
 
   private
