@@ -25,7 +25,7 @@
             <% end %>
         </div>
         <% unless gig.private_event %>
-            <% has_tags = gig.venue&.location.present? %>
+            <% has_tags = gig.venue&.name.present? || gig.venue&.location.present? %>
             <%
               if defined?(@band) && @band
                 calendar_url = "/schedule/#{@band.slug}/gigs/#{gig.id}/calendar.ics"
@@ -37,9 +37,9 @@
             %>
             <% if has_tags || calendar_url %>
                 <div class="gig-tags">
-                    <% if gig.venue&.location %>
-                        <% map_link = gig.venue.map_url.present? ? gig.venue.map_url : "https://www.google.com/maps/search/?api=1&query=#{h(gig.venue.location)}" %>
-                        <a href="<%= h(map_link) %>" target="_blank" rel="noopener noreferrer" class="gig-location">📍 <%= h(gig.venue.location) %></a>
+                    <% if gig.venue&.name.present? || gig.venue&.location.present? %>
+                        <% map_link = gig.venue.map_url.present? ? gig.venue.map_url : "https://www.google.com/maps/search/?api=1&query=#{h([gig.venue.name, gig.venue.location].compact.join(', '))}" %>
+                        <a href="<%= h(map_link) %>" target="_blank" rel="noopener noreferrer" class="gig-location">📍 <%= h([gig.venue.name, gig.venue.location].compact.join(', ')) %></a>
                     <% end %>
                     <% if calendar_url %>
                         <a href="<%= calendar_url %>" class="calendar-link" download>Add to Calendar</a>

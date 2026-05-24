@@ -14,8 +14,21 @@
 <h1 class="page-heading">Upcoming Shows</h1>
 
 <% if @upcoming_gigs.any? %>
-    <% @upcoming_gigs.each do |gig| %>
-        <%= erb :_public_gig_item, locals: { gig: gig, show_band_name: false } %>
+    <%
+      _palette = [
+        { bg: '#c44d7a', glow: 'rgba(196,77,122,0.3)' },
+        { bg: '#c97030', glow: 'rgba(201,112,48,0.3)' },
+        { bg: '#6848c0', glow: 'rgba(104,72,192,0.3)' },
+        { bg: '#2a9e8a', glow: 'rgba(42,158,138,0.3)' },
+        { bg: '#b89020', glow: 'rgba(184,144,32,0.3)' },
+      ]
+      _last = nil
+      _gig_colors = @upcoming_gigs.map do
+        _last = (_palette - [_last]).sample
+      end
+    %>
+    <% @upcoming_gigs.each_with_index do |gig, i| %>
+        <%= erb :_public_gig_item, locals: { gig: gig, show_band_name: false, badge_color: _gig_colors[i] } %>
     <% end %>
 <% else %>
     <div class="no-gigs">
