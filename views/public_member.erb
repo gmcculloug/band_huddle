@@ -1,20 +1,17 @@
-<div class="card">
-    <div class="header">
-        <h1><%= h(@user.display_name) %></h1>
-        <p>Upcoming Performances</p>
-    </div>
-
-    <div class="content">
-        <% if @upcoming_gigs.any? %>
-            <% @upcoming_gigs.each do |gig| %>
-                <%= erb :_public_gig_item, locals: { gig: gig, show_band_name: true } %>
-            <% end %>
-        <% else %>
-            <div class="no-gigs">
-                <div class="no-gigs-icon">🎸</div>
-                <p>No upcoming performances scheduled.</p>
-                <p style="font-size: 0.9rem; margin-top: 10px;">Check back soon for updates!</p>
-            </div>
-        <% end %>
-    </div>
+<div class="band-header">
+    <div class="band-title"><%= h(@user.display_name) %></div>
 </div>
+
+<h1 class="page-heading">Upcoming Performances</h1>
+
+<% if @upcoming_gigs.any? %>
+    <% @upcoming_gigs.each do |gig| %>
+        <%= erb :_public_gig_item, locals: { gig: gig, show_band_name: true } %>
+    <% end %>
+<% else %>
+    <div class="no-gigs">
+        <div class="no-gigs-icon">🎸</div>
+        <p>No upcoming performances scheduled.</p>
+        <p style="font-size: 0.9rem; margin-top: 10px;">Check back soon for updates!</p>
+    </div>
+<% end %>

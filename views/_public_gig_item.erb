@@ -1,46 +1,32 @@
-<div class="gig-item">
-    <div class="gig-date">
-        <div class="month"><%= gig.performance_date.strftime('%b') %></div>
-        <div class="day"><%= gig.performance_date.day %></div>
-        <div class="weekday" style="color: #2d3748; font-weight: bold;"><%= gig.performance_date.strftime('%A') %></div>
+<div class="gig-row">
+    <div class="gig-date-badge">
+        <div class="badge-month"><%= gig.performance_date.strftime('%b') %></div>
+        <div class="badge-day"><%= gig.performance_date.day %></div>
     </div>
-    <div class="gig-details">
+    <div class="gig-card">
+        <% if defined?(show_band_name) && show_band_name %>
+            <div style="color: #3a7a9c; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">
+                <%= h(gig.band.name) %>
+            </div>
+        <% end %>
         <div class="gig-name">
             <% if !gig.private_event && gig.venue&.website.present? %>
                 <a href="<%= h(gig.venue.website) %>" target="_blank" rel="noopener noreferrer"><%= h(gig.name) %></a>
             <% else %>
                 <%= gig.private_event ? 'Private Event' : h(gig.name) %>
             <% end %>
-        </div>
-        <% if defined?(show_band_name) && show_band_name %>
-            <div style="color: #667eea; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">
-                <%= h(gig.band.name) %>
-            </div>
-        <% end %>
-        <% unless gig.private_event %>
-            <% if gig.start_time %>
-                <div class="gig-time" style="color: #2d3748; font-weight: bold;">
-                    🕐 <span class="local-time" data-utc="<%= gig.start_time.utc.iso8601 %>"><%= gig.start_time.utc.strftime('%I:%M %p UTC') %></span>
+            <% if !gig.private_event && gig.start_time %>
+                <span class="gig-name-time">
+                    <span class="local-time" data-utc="<%= gig.start_time.utc.iso8601 %>"><%= gig.start_time.utc.strftime('%-I:%M %p UTC') %></span>
                     <% if gig.end_time %>
-                        - <span class="local-time" data-utc="<%= gig.end_time.utc.iso8601 %>"><%= gig.end_time.utc.strftime('%I:%M %p UTC') %></span>
+                        &ndash; <span class="local-time" data-utc="<%= gig.end_time.utc.iso8601 %>"><%= gig.end_time.utc.strftime('%-I:%M %p UTC') %></span>
                     <% end %>
-                </div>
+                </span>
             <% end %>
-            <% if gig.venue %>
-                <div class="gig-venue">
-                    📍
-                    <% unless gig.name == gig.venue.name %>
-                        <span class="venue-name"><%= h(gig.venue.name) %></span>
-                    <% end %>
-                    <% if gig.venue.location %>
-                        <% map_link = gig.venue.map_url.present? ? gig.venue.map_url : "https://www.google.com/maps/search/?api=1&query=#{h(gig.venue.location)}" %>
-                        <% separator = (gig.name == gig.venue.name) ? '' : ' — ' %>
-                        <span class="venue-location"><%= separator %><a href="<%= h(map_link) %>" target="_blank" rel="noopener noreferrer"><%= h(gig.venue.location) %></a></span>
-                    <% end %>
-                </div>
-            <% end %>
+        </div>
+        <% unless gig.private_event %>
+            <% has_tags = gig.venue&.location.present? %>
             <%
-              # Determine the calendar route based on context
               if defined?(@band) && @band
                 calendar_url = "/schedule/#{@band.slug}/gigs/#{gig.id}/calendar.ics"
               elsif defined?(@user) && @user
@@ -49,9 +35,15 @@
                 calendar_url = nil
               end
             %>
-            <% if calendar_url %>
-                <div class="gig-calendar" style="margin-top: 8px;">
-                    <a href="<%= calendar_url %>" class="calendar-link" download>Add to Calendar</a>
+            <% if has_tags || calendar_url %>
+                <div class="gig-tags">
+                    <% if gig.venue&.location %>
+                        <% map_link = gig.venue.map_url.present? ? gig.venue.map_url : "https://www.google.com/maps/search/?api=1&query=#{h(gig.venue.location)}" %>
+                        <a href="<%= h(map_link) %>" target="_blank" rel="noopener noreferrer" class="gig-location">📍 <%= h(gig.venue.location) %></a>
+                    <% end %>
+                    <% if calendar_url %>
+                        <a href="<%= calendar_url %>" class="calendar-link" download>Add to Calendar</a>
+                    <% end %>
                 </div>
             <% end %>
         <% end %>

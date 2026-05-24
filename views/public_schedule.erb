@@ -1,30 +1,26 @@
-<div class="card">
-    <div class="header">
+<% if @band.logo_filename.present? || @band.show_band_name %>
+    <div class="band-header">
         <% if @band.logo_filename.present? %>
             <img src="/uploads/band_logos/<%= @band.logo_filename %>"
                  alt="<%= h(@band.name) %>"
-                 fetchpriority="high"
-                 style="max-height: <%= @band.show_band_name ? '200px' : '260px' %>; max-width: 90%; object-fit: contain; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
-            <% if @band.show_band_name %>
-                <h1><%= h(@band.name) %></h1>
-            <% end %>
-        <% else %>
-            <h1><%= h(@band.name) %></h1>
+                 fetchpriority="high">
         <% end %>
-        <p>Upcoming Shows &amp; Performances</p>
+        <% if @band.show_band_name || !@band.logo_filename.present? %>
+            <div class="band-title"><%= h(@band.name) %></div>
+        <% end %>
     </div>
+<% end %>
 
-    <div class="content">
-        <% if @upcoming_gigs.any? %>
-            <% @upcoming_gigs.each do |gig| %>
-                <%= erb :_public_gig_item, locals: { gig: gig, show_band_name: false } %>
-            <% end %>
-        <% else %>
-            <div class="no-gigs">
-                <div class="no-gigs-icon">🎵</div>
-                <p>No upcoming shows scheduled.</p>
-                <p style="font-size: 0.9rem; margin-top: 10px;">Check back soon for updates!</p>
-            </div>
-        <% end %>
+<h1 class="page-heading">Upcoming Shows</h1>
+
+<% if @upcoming_gigs.any? %>
+    <% @upcoming_gigs.each do |gig| %>
+        <%= erb :_public_gig_item, locals: { gig: gig, show_band_name: false } %>
+    <% end %>
+<% else %>
+    <div class="no-gigs">
+        <div class="no-gigs-icon">🎵</div>
+        <p>No upcoming shows scheduled.</p>
+        <p style="font-size: 0.9rem; margin-top: 10px;">Check back soon for updates!</p>
     </div>
-</div>
+<% end %>
