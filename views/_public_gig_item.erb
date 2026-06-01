@@ -1,11 +1,11 @@
 <div class="gig-row">
-    <div class="gig-date-badge">
+    <div class="gig-date-badge" style="background:<%= badge_color[:bg] %>">
         <div class="badge-month"><%= gig.performance_date.strftime('%b') %></div>
         <div class="badge-day"><%= gig.performance_date.day %></div>
     </div>
-    <div class="gig-card">
+    <div class="gig-card" style="box-shadow: 4px 4px 28px <%= badge_color[:glow] %>">
         <% if defined?(show_band_name) && show_band_name %>
-            <div style="color: #3a7a9c; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">
+            <div style="color: #a78bfa; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">
                 <%= h(gig.band.name) %>
             </div>
         <% end %>
