@@ -1,0 +1,182 @@
+require_relative '../spec_helper'
+
+RSpec.describe 'Public Song Votes Routes', type: :request do
+  let(:band) { create(:band, public_songs_enabled: true) }
+  let(:disabled_band) { create(:band, name: 'Private Band', public_songs_enabled: false) }
+
+  def add_song(band, title: 'Song', artist: 'Artist')
+    song = create(:song, title: title, artist: artist)
+    band.songs << song
+    song
+  end
+
+  describe 'POST /band/:slug/songs/:id/upvote' do
+    context 'with a fresh vote' do
+      it 'increments the vote count and redirects with success' do
+        song = add_song(band)
+
+        post "/band/#{band.slug}/songs/#{song.id}/upvote"
+
+        expect(last_response.status).to eq(302)
+        expect(last_response.location).to include("/band/#{band.slug}/songs")
+        expect(last_response.location).to include('success=')
+
+        song_band = SongBand.find_by_song_and_band(song, band)
+        expect(song_band.votes_count).to eq(1)
+      end
+
+      it 'preserves the sort mode in the redirect' do
+        song = add_song(band)
+
+        post "/band/#{band.slug}/songs/#{song.id}/upvote?by=votes"
+
+        expect(last_response.location).to include('by=votes')
+      end
+
+      it 'immediately shows the updated count on the public page' do
+        song = add_song(band, title: 'Freebird')
+
+        post "/band/#{band.slug}/songs/#{song.id}/upvote"
+        get "/band/#{band.slug}/songs"
+
+        expect(last_response.body).to match(/Freebird.*vote-count">1</m)
+      end
+    end
+
+    context 'rate limiting' do
+      it 'rejects a second vote for the same song from the same IP' do
+        song = add_song(band)
+
+        post "/band/#{band.slug}/songs/#{song.id}/upvote"
+        post "/band/#{band.slug}/songs/#{song.id}/upvote"
+
+        expect(last_response.location).to include('error=')
+        song_band = SongBand.find_by_song_and_band(song, band)
+        expect(song_band.votes_count).to eq(1)
+      end
+
+      it 'allows voting for a different song from the same IP' do
+        song = add_song(band, title: 'Song A')
+        other_song = add_song(band, title: 'Song B')
+
+        post "/band/#{band.slug}/songs/#{song.id}/upvote"
+        post "/band/#{band.slug}/songs/#{other_song.id}/upvote"
+
+        expect(last_response.location).to include('success=')
+        expect(SongBand.find_by_song_and_band(other_song, band).votes_count).to eq(1)
+      end
+    end
+
+    context 'daily reset' do
+      it 'resets to 1 instead of incrementing a stale prior-day count' do
+        song = add_song(band)
+        SongBand.record_vote!(song, band)
+        SongBand.record_vote!(song, band)
+        SongBand.where(song_id: song.id, band_id: band.id).update_all(votes_date: 1.day.ago.to_date)
+
+        post "/band/#{band.slug}/songs/#{song.id}/upvote"
+
+        expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(1)
+      end
+    end
+
+    context 'sorting by votes' do
+      it 'orders the most-voted song first' do
+        low = add_song(band, title: 'Low Votes')
+        high = add_song(band, title: 'High Votes')
+        SongBand.record_vote!(high, band)
+
+        get "/band/#{band.slug}/songs?by=votes"
+
+        body = last_response.body
+        expect(body.index('High Votes')).to be < body.index('Low Votes')
+      end
+    end
+
+    context 'when the song does not belong to the band' do
+      it 'does not increment votes and redirects with an error' do
+        other_band = create(:band)
+        song = add_song(other_band)
+
+        post "/band/#{band.slug}/songs/#{song.id}/upvote"
+
+        expect(last_response.location).to include('error=')
+        expect(SongBand.where(song_id: song.id, band_id: band.id)).to be_empty
+      end
+    end
+
+    context 'when public songs is disabled' do
+      it 'returns the not-found page without recording a vote' do
+        song = add_song(disabled_band)
+
+        post "/band/#{disabled_band.slug}/songs/#{song.id}/upvote"
+
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('Songs Not Found')
+        expect(SongVote.count).to eq(0)
+      end
+    end
+
+    context 'when band does not exist' do
+      it 'returns the not-found page' do
+        post '/band/no-such-band/songs/1/upvote'
+
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('Songs Not Found')
+      end
+    end
+  end
+
+  describe 'POST /band/:slug/songs/:id/downvote' do
+    it "removes the caller's up-vote from today's count" do
+      song = add_song(band)
+      post "/band/#{band.slug}/songs/#{song.id}/upvote"
+
+      post "/band/#{band.slug}/songs/#{song.id}/downvote"
+
+      expect(last_response.status).to eq(302)
+      expect(last_response.location).to include('success=')
+      expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(0)
+    end
+
+    it 'allows voting again after a downvote' do
+      song = add_song(band)
+      post "/band/#{band.slug}/songs/#{song.id}/upvote"
+      post "/band/#{band.slug}/songs/#{song.id}/downvote"
+
+      post "/band/#{band.slug}/songs/#{song.id}/upvote"
+
+      expect(last_response.location).to include('success=')
+      expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(1)
+    end
+
+    it "errors when the caller hasn't voted for the song today" do
+      song = add_song(band)
+
+      post "/band/#{band.slug}/songs/#{song.id}/downvote"
+
+      expect(last_response.location).to include('error=')
+      expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(0)
+    end
+
+    it 'preserves the sort mode in the redirect' do
+      song = add_song(band)
+      post "/band/#{band.slug}/songs/#{song.id}/upvote"
+
+      post "/band/#{band.slug}/songs/#{song.id}/downvote?by=votes"
+
+      expect(last_response.location).to include('by=votes')
+    end
+
+    context 'when public songs is disabled' do
+      it 'returns the not-found page without changing votes' do
+        song = add_song(disabled_band)
+
+        post "/band/#{disabled_band.slug}/songs/#{song.id}/downvote"
+
+        expect(last_response.status).to eq(200)
+        expect(last_response.body).to include('Songs Not Found')
+      end
+    end
+  end
+end

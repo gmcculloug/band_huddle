@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_25_153758) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_25_183906) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -194,6 +194,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_153758) do
     t.index ["status"], name: "index_song_recommendations_on_status"
   end
 
+  create_table "song_votes", force: :cascade do |t|
+    t.bigint "band_id", null: false
+    t.datetime "created_at", null: false
+    t.string "ip_address", null: false
+    t.bigint "song_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["band_id"], name: "index_song_votes_on_band_id"
+    t.index ["song_id", "band_id", "ip_address", "created_at"], name: "index_song_votes_on_song_band_ip_time"
+    t.index ["song_id"], name: "index_song_votes_on_song_id"
+  end
+
   create_table "songs", force: :cascade do |t|
     t.string "album"
     t.boolean "archived", default: false, null: false
@@ -224,11 +235,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_153758) do
     t.boolean "practice_state", default: false, null: false
     t.datetime "practice_state_updated_at", precision: nil
     t.bigint "song_id", null: false
+    t.integer "votes_count", default: 0, null: false
+    t.date "votes_date"
     t.index ["band_id", "practice_state"], name: "index_songs_bands_on_band_id_and_practice_state"
     t.index ["band_id"], name: "index_songs_bands_on_band_id"
     t.index ["practice_state"], name: "index_songs_bands_on_practice_state"
     t.index ["song_id", "band_id"], name: "index_songs_bands_on_song_id_and_band_id", unique: true
     t.index ["song_id"], name: "index_songs_bands_on_song_id"
+    t.index ["votes_count"], name: "index_songs_bands_on_votes_count"
+    t.index ["votes_date"], name: "index_songs_bands_on_votes_date"
   end
 
   create_table "user_bands", force: :cascade do |t|
@@ -305,6 +320,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_153758) do
   add_foreign_key "practices", "bands"
   add_foreign_key "practices", "users", column: "created_by_user_id"
   add_foreign_key "song_recommendations", "bands"
+  add_foreign_key "song_votes", "bands"
+  add_foreign_key "song_votes", "songs"
   add_foreign_key "songs", "song_catalogs"
   add_foreign_key "songs_bands", "bands"
   add_foreign_key "songs_bands", "songs"

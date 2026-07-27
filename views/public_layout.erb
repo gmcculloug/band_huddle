@@ -396,7 +396,6 @@
         .song-row {
             display: flex;
             align-items: baseline;
-            justify-content: space-between;
             gap: 12px;
             padding: 14px 22px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -407,14 +406,62 @@
         }
 
         .song-title {
+            flex: 0 0 45%;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
             font-weight: 600;
             color: #fff;
         }
 
         .song-artist {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
             font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.55);
             white-space: nowrap;
+        }
+
+        .vote-form {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0 0 0 auto;
+            flex-shrink: 0;
+        }
+
+        .vote-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .vote-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .vote-count {
+            min-width: 1.5em;
+            text-align: center;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .song-card--votes .song-row {
+            align-items: center;
         }
 
         .no-gigs {

@@ -33,6 +33,7 @@ require_relative 'lib/models/google_calendar_event'
 require_relative 'lib/models/practice'
 require_relative 'lib/models/practice_availability'
 require_relative 'lib/models/song_recommendation'
+require_relative 'lib/models/song_vote'
 
 # Load services
 require_relative 'lib/services/google_calendar_service'

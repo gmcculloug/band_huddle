@@ -97,6 +97,11 @@ RSpec.configure do |config|
     rescue ActiveRecord::StatementInvalid
       # SongRecommendation table doesn't exist in test DB, skip
     end
+    begin
+      SongVote.delete_all
+    rescue ActiveRecord::StatementInvalid
+      # SongVote table doesn't exist in test DB, skip
+    end
     # Clear many-to-many relationships first
     begin
       ActiveRecord::Base.connection.execute("DELETE FROM songs_bands")

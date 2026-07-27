@@ -46,6 +46,30 @@ class SongBand < ActiveRecord::Base
     find_or_create_by(song_id: song.id, band_id: band.id)
   end
 
+  # Votes are a same-day tally for gig-day song requests; a new day starts the count over.
+  VOTES_COUNT_SQL = "CASE WHEN songs_bands.votes_date = (NOW() AT TIME ZONE 'utc')::date THEN songs_bands.votes_count ELSE 0 END".freeze
+
+  def self.record_vote!(song, band)
+    song_band = find_or_create_by_song_and_band(song, band)
+    today = Time.now.utc.to_date
+    scope = where(song_id: song.id, band_id: band.id)
+
+    if song_band.votes_date == today
+      scope.update_all('votes_count = votes_count + 1')
+    else
+      scope.update_all(votes_count: 1, votes_date: today)
+    end
+    song_band
+  end
+
+  def self.retract_vote!(song, band)
+    song_band = find_by_song_and_band(song, band)
+    return song_band if song_band.nil? || song_band.votes_date != Time.now.utc.to_date
+
+    where(song_id: song.id, band_id: band.id).update_all('votes_count = GREATEST(votes_count - 1, 0)')
+    song_band
+  end
+
   private
 
   def set_default_practice_state

@@ -22,6 +22,7 @@
 <div class="view-toggle">
     <a href="/band/<%= @band.slug %>/songs?by=title" class="view-toggle-link<%= ' active' if @view_by == 'title' %>">By Title</a>
     <a href="/band/<%= @band.slug %>/songs?by=artist" class="view-toggle-link<%= ' active' if @view_by == 'artist' %>">By Artist</a>
+    <a href="/band/<%= @band.slug %>/songs?by=votes" class="view-toggle-link<%= ' active' if @view_by == 'votes' %>">By Votes</a>
 </div>
 
 <% if params[:success] %>
@@ -47,40 +48,67 @@
 </details>
 
 <% if @songs.any? %>
-    <%
-      _group_field = @view_by == 'artist' ? :artist : :title
-      _letter_groups = @songs.group_by { |song| song.public_send(_group_field)[0].upcase }
-
-      _palette = [
-        { bg: '#c44d7a' },
-        { bg: '#c97030' },
-        { bg: '#6848c0' },
-        { bg: '#2a9e8a' },
-        { bg: '#b89020' },
-      ]
-      _last = nil
-      _letter_colors = _letter_groups.keys.each_with_object({}) do |letter, colors|
-        _last = (_palette - [_last]).sample
-        colors[letter] = _last
-      end
-    %>
-    <% _letter_groups.each do |letter, songs| %>
-        <div class="letter-row">
-            <div class="song-badge" style="background:<%= _letter_colors[letter][:bg] %>"><%= h(letter) %></div>
-            <div class="song-card">
-                <% songs.each do |song| %>
-                    <div class="song-row">
-                        <% if @view_by == 'artist' %>
-                            <div class="song-title"><%= h(song.artist) %></div>
-                            <div class="song-artist"><%= h(song.title) %></div>
-                        <% else %>
-                            <div class="song-title"><%= h(song.title) %></div>
-                            <div class="song-artist"><%= h(song.artist) %></div>
-                        <% end %>
-                    </div>
-                <% end %>
-            </div>
+    <% if @view_by == 'votes' %>
+        <div class="song-card song-card--votes">
+            <% @songs.each do |song| %>
+                <div class="song-row">
+                    <div class="song-title"><%= h(song.title) %></div>
+                    <div class="song-artist"><%= h(song.artist) %></div>
+                    <%
+                        _voted = @voted_song_ids.include?(song.id)
+                        _action = _voted ? 'downvote' : 'upvote'
+                    %>
+                    <form method="post" action="/band/<%= @band.slug %>/songs/<%= song.id %>/<%= _action %>?by=<%= @view_by %>" class="vote-form">
+                        <button type="submit" class="vote-btn" aria-label="<%= _voted ? 'Remove vote for' : 'Upvote' %> <%= h(song.title) %>"><%= _voted ? '▼' : '▲' %></button>
+                        <span class="vote-count"><%= song.votes_count %></span>
+                    </form>
+                </div>
+            <% end %>
         </div>
+    <% else %>
+        <%
+          _group_field = @view_by == 'artist' ? :artist : :title
+          _letter_groups = @songs.group_by { |song| song.public_send(_group_field)[0].upcase }
+
+          _palette = [
+            { bg: '#c44d7a' },
+            { bg: '#c97030' },
+            { bg: '#6848c0' },
+            { bg: '#2a9e8a' },
+            { bg: '#b89020' },
+          ]
+          _last = nil
+          _letter_colors = _letter_groups.keys.each_with_object({}) do |letter, colors|
+            _last = (_palette - [_last]).sample
+            colors[letter] = _last
+          end
+        %>
+        <% _letter_groups.each do |letter, songs| %>
+            <div class="letter-row">
+                <div class="song-badge" style="background:<%= _letter_colors[letter][:bg] %>"><%= h(letter) %></div>
+                <div class="song-card">
+                    <% songs.each do |song| %>
+                        <div class="song-row">
+                            <% if @view_by == 'artist' %>
+                                <div class="song-title"><%= h(song.artist) %></div>
+                                <div class="song-artist"><%= h(song.title) %></div>
+                            <% else %>
+                                <div class="song-title"><%= h(song.title) %></div>
+                                <div class="song-artist"><%= h(song.artist) %></div>
+                            <% end %>
+                            <%
+                                _voted = @voted_song_ids.include?(song.id)
+                                _action = _voted ? 'downvote' : 'upvote'
+                            %>
+                            <form method="post" action="/band/<%= @band.slug %>/songs/<%= song.id %>/<%= _action %>?by=<%= @view_by %>" class="vote-form">
+                                <button type="submit" class="vote-btn" aria-label="<%= _voted ? 'Remove vote for' : 'Upvote' %> <%= h(song.title) %>"><%= _voted ? '▼' : '▲' %></button>
+                                <span class="vote-count"><%= song.votes_count %></span>
+                            </form>
+                        </div>
+                    <% end %>
+                </div>
+            </div>
+        <% end %>
     <% end %>
 <% else %>
     <div class="no-gigs">
