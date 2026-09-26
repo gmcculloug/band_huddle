@@ -7,6 +7,10 @@ module ApplicationHelpers
     Rack::Utils.escape_html(text.to_s)
   end
 
+  def device_id
+    request.env[BandHuddle::DeviceId::ENV_KEY]
+  end
+
   # Authentication helpers
   def current_user
     # Return cached user if already loaded

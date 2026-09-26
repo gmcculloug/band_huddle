@@ -32,7 +32,7 @@ RSpec.describe 'Songs API', type: :request do
       song = create(:song, bands: [band])
       SongBand.record_vote!(song, band)
       SongBand.record_vote!(song, band)
-      SongVote.create!(song: song, band: band, ip_address: '192.0.2.10')
+      SongVote.create!(song: song, band: band, ip_address: '192.0.2.10', device_id: 'test-device-1')
 
       post '/songs/reset_votes'
 
@@ -68,7 +68,7 @@ RSpec.describe 'Songs API', type: :request do
       other_song = create(:song, bands: [other_band])
       SongBand.record_vote!(current_song, band)
       SongBand.record_vote!(other_song, other_band)
-      other_vote = SongVote.create!(song: other_song, band: other_band, ip_address: '192.0.2.11')
+      other_vote = SongVote.create!(song: other_song, band: other_band, ip_address: '192.0.2.11', device_id: 'test-device-2')
 
       post '/songs/reset_votes'
 

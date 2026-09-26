@@ -6,6 +6,7 @@ require 'erb'
 require 'bcrypt'
 require 'rack/method_override'
 require 'connection_pool'
+require_relative 'lib/middleware/device_id'
 
 # Only require Redis gems when Valkey sessions are enabled
 if ENV['VALKEY_ENABLED'] == 'true'
@@ -102,6 +103,8 @@ else
   enable :sessions
   set :session_secret, session_secret
 end
+
+use BandHuddle::DeviceId
 
 set :public_folder, File.dirname(__FILE__) + '/public'
 

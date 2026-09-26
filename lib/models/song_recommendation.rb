@@ -13,8 +13,8 @@ class SongRecommendation < ActiveRecord::Base
   scope :approved, -> { where(status: 'approved') }
   scope :rejected, -> { where(status: 'rejected') }
 
-  def self.rate_limited?(ip_address, window: 1.hour, max: 5)
-    where(ip_address: ip_address, created_at: window.ago..).count >= max
+  def self.rate_limited?(device_id, window: 1.hour, max: 5)
+    where(device_id: device_id, created_at: window.ago..).count >= max
   end
 
   def self.pending_limit_reached?(band, max: 200)

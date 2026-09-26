@@ -89,7 +89,7 @@ RSpec.describe 'Public Song Votes Routes', type: :request do
     end
 
     context 'rate limiting' do
-      it 'rejects a second vote for the same song from the same IP' do
+      it 'rejects a second vote for the same song from the same device' do
         song = add_song(band)
 
         post "/band/#{band.slug}/songs/#{song.id}/upvote"
@@ -100,7 +100,23 @@ RSpec.describe 'Public Song Votes Routes', type: :request do
         expect(song_band.votes_count).to eq(1)
       end
 
-      it 'allows voting for a different song from the same IP' do
+      it 'allows different devices on the same IP to vote independently' do
+        song = add_song(band)
+        device_a = '11111111-1111-4111-8111-111111111111'
+        device_b = '22222222-2222-4222-8222-222222222222'
+        cookie_name = BandHuddle::DeviceId::COOKIE_NAME
+
+        post "/band/#{band.slug}/songs/#{song.id}/upvote", {},
+          'HTTP_COOKIE' => "#{cookie_name}=#{device_a}"
+        post "/band/#{band.slug}/songs/#{song.id}/upvote", {},
+          'HTTP_COOKIE' => "#{cookie_name}=#{device_b}"
+
+        expect(last_response.location).to include("voted=#{song.id}")
+        expect(SongVote.order(:id).last(2).pluck(:device_id)).to eq([device_a, device_b])
+        expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(2)
+      end
+
+      it 'allows voting for a different song from the same device' do
         song = add_song(band, title: 'Song A')
         other_song = add_song(band, title: 'Song B')
 

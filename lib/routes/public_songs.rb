@@ -27,7 +27,7 @@ class Routes::PublicSongs < Sinatra::Base
     @band = band
     @view_by = %w[artist votes].include?(params[:by]) ? params[:by] : 'title'
     @songs = songs_for_band_view(band, @view_by)
-    @voted_song_ids = voted_song_ids_for(request.ip, band, @songs)
+    @voted_song_ids = voted_song_ids_for(device_id, band, @songs)
 
     erb :public_songs, layout: :public_layout
   end
@@ -45,7 +45,7 @@ class Routes::PublicSongs < Sinatra::Base
     songs = Song.active.ready_for_band(band)
       .select("songs.id, #{SongBand::VOTES_COUNT_SQL} AS votes_count, songs_bands.total_votes_count AS total_votes_count")
       .to_a
-    voted_song_ids = voted_song_ids_for(request.ip, band, songs)
+    voted_song_ids = voted_song_ids_for(device_id, band, songs)
 
     votes = songs.map do |song|
       {
@@ -72,11 +72,11 @@ class Routes::PublicSongs < Sinatra::Base
 
     if song.nil?
       redirect "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component('Song not found')}"
-    elsif SongVote.rate_limited?(request.ip, song, band)
+    elsif SongVote.rate_limited?(device_id, song, band)
       already_voted_message = "You've already voted for this song recently"
       redirect "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component(already_voted_message)}"
     else
-      SongVote.create!(song: song, band: band, ip_address: request.ip)
+      SongVote.create!(song: song, band: band, ip_address: request.ip, device_id: device_id)
       SongBand.record_vote!(song, band)
       redirect "/band/#{band.slug}/songs?by=#{view_by}&voted=#{song.id}"
     end
@@ -95,11 +95,11 @@ class Routes::PublicSongs < Sinatra::Base
 
     if song.nil?
       redirect "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component('Song not found')}"
-    elsif !SongVote.voted_today?(request.ip, song, band)
+    elsif !SongVote.voted_today?(device_id, song, band)
       no_vote_message = "You haven't voted for this song today"
       redirect "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component(no_vote_message)}"
     else
-      SongVote.retract!(request.ip, song, band)
+      SongVote.retract!(device_id, song, band)
       SongBand.retract_vote!(song, band)
       redirect "/band/#{band.slug}/songs?by=#{view_by}&voted=#{song.id}"
     end
@@ -118,7 +118,7 @@ class Routes::PublicSongs < Sinatra::Base
       redirect "/band/#{band.slug}/songs?success=#{URI.encode_www_form_component('Thanks for your recommendation!')}"
     end
 
-    if SongRecommendation.rate_limited?(request.ip) || SongRecommendation.pending_limit_reached?(band)
+    if SongRecommendation.rate_limited?(device_id) || SongRecommendation.pending_limit_reached?(band)
       redirect "/band/#{band.slug}/songs?error=#{URI.encode_www_form_component('Unable to accept recommendations right now. Please try again later.')}"
     end
 
@@ -127,7 +127,8 @@ class Routes::PublicSongs < Sinatra::Base
       title: params[:title],
       artist: params[:artist],
       notes: params[:notes],
-      ip_address: request.ip
+      ip_address: request.ip,
+      device_id: device_id
     )
 
     if rec.save
@@ -136,7 +137,7 @@ class Routes::PublicSongs < Sinatra::Base
       @band = band
       @view_by = %w[artist votes].include?(params[:by]) ? params[:by] : 'title'
       @songs = songs_for_band_view(band, @view_by)
-      @voted_song_ids = voted_song_ids_for(request.ip, band, @songs)
+      @voted_song_ids = voted_song_ids_for(device_id, band, @songs)
       @recommend_errors = rec.errors.full_messages
       erb :public_songs, layout: :public_layout
     end
@@ -144,10 +145,10 @@ class Routes::PublicSongs < Sinatra::Base
 
   private
 
-  def voted_song_ids_for(ip_address, band, songs)
+  def voted_song_ids_for(device_id, band, songs)
     return [].to_set if songs.empty?
 
-    SongVote.where(song_id: songs.map(&:id), band: band, ip_address: ip_address, created_at: 1.day.ago..)
+    SongVote.where(song_id: songs.map(&:id), band: band, device_id: device_id, created_at: 1.day.ago..)
       .distinct
       .pluck(:song_id)
       .to_set

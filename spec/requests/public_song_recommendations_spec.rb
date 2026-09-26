@@ -19,10 +19,12 @@ RSpec.describe 'Public Song Recommendations Routes', type: :request do
         expect(rec.status).to eq('pending')
       end
 
-      it 'stores the submitter IP address' do
+      it 'stores the submitter IP address and browser device ID' do
         post "/band/#{band.slug}/songs/recommend", title: 'New Song', artist: 'New Artist'
 
-        expect(SongRecommendation.last.ip_address).to be_present
+        recommendation = SongRecommendation.last
+        expect(recommendation.ip_address).to be_present
+        expect(recommendation.device_id).to match(BandHuddle::DeviceId::UUID_PATTERN)
       end
     end
 
@@ -46,7 +48,7 @@ RSpec.describe 'Public Song Recommendations Routes', type: :request do
     end
 
     context 'rate limiting' do
-      it 'rejects submissions once the per-IP hourly limit is reached' do
+      it 'rejects submissions once the per-device hourly limit is reached' do
         5.times do |n|
           post "/band/#{band.slug}/songs/recommend", title: "Song #{n}", artist: 'Artist'
         end
@@ -57,6 +59,22 @@ RSpec.describe 'Public Song Recommendations Routes', type: :request do
         expect(last_response.status).to eq(302)
         expect(last_response.location).to include('error=')
         expect(SongRecommendation.count).to eq(5)
+      end
+
+      it 'applies the recommendation limit independently to devices on the same IP' do
+        device_a = '11111111-1111-4111-8111-111111111111'
+        device_b = '22222222-2222-4222-8222-222222222222'
+        cookie_name = BandHuddle::DeviceId::COOKIE_NAME
+
+        5.times do |n|
+          post "/band/#{band.slug}/songs/recommend", { title: "Song #{n}", artist: 'Artist' },
+            'HTTP_COOKIE' => "#{cookie_name}=#{device_a}"
+        end
+        post "/band/#{band.slug}/songs/recommend", { title: 'Another device', artist: 'Artist' },
+          'HTTP_COOKIE' => "#{cookie_name}=#{device_b}"
+
+        expect(SongRecommendation.count).to eq(6)
+        expect(SongRecommendation.order(:id).last.device_id).to eq(device_b)
       end
     end
 

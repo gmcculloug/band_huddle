@@ -19,15 +19,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_154916) do
     t.boolean "google_calendar_enabled", default: false
     t.string "google_calendar_id"
     t.string "google_calendar_sync_token"
-    t.string "logo_filename"
     t.string "name", null: false
     t.text "notes"
     t.bigint "owner_id"
     t.boolean "public_schedule_enabled", default: false
-    t.boolean "public_songs_enabled", default: false
-    t.boolean "show_band_name", default: true, null: false
     t.string "slug"
     t.datetime "updated_at", null: false
+    t.string "logo_filename"
+    t.boolean "show_band_name", default: true, null: false
+    t.boolean "public_songs_enabled", default: false
     t.index ["google_calendar_enabled"], name: "index_bands_on_google_calendar_enabled"
     t.index ["google_calendar_id"], name: "index_bands_on_google_calendar_id"
     t.index ["name"], name: "index_bands_on_name", unique: true
@@ -180,27 +180,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_154916) do
   end
 
   create_table "song_recommendations", force: :cascade do |t|
-    t.string "artist", null: false
     t.bigint "band_id", null: false
-    t.datetime "created_at", null: false
-    t.string "ip_address", null: false
+    t.string "title", null: false
+    t.string "artist", null: false
     t.text "notes"
     t.string "status", default: "pending", null: false
-    t.string "title", null: false
+    t.string "ip_address", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "device_id"
     t.index ["band_id", "status"], name: "index_song_recommendations_on_band_id_and_status"
     t.index ["band_id"], name: "index_song_recommendations_on_band_id"
+    t.index ["device_id", "created_at"], name: "index_song_recommendations_on_device_id_and_created_at"
     t.index ["ip_address", "created_at"], name: "index_song_recommendations_on_ip_address_and_created_at"
     t.index ["status"], name: "index_song_recommendations_on_status"
   end
 
   create_table "song_votes", force: :cascade do |t|
-    t.bigint "band_id", null: false
-    t.datetime "created_at", null: false
-    t.string "ip_address", null: false
     t.bigint "song_id", null: false
+    t.bigint "band_id", null: false
+    t.string "ip_address", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "device_id"
     t.index ["band_id"], name: "index_song_votes_on_band_id"
+    t.index ["song_id", "band_id", "device_id", "created_at"], name: "index_song_votes_on_song_band_device_time"
     t.index ["song_id", "band_id", "ip_address", "created_at"], name: "index_song_votes_on_song_band_ip_time"
     t.index ["song_id"], name: "index_song_votes_on_song_id"
   end
@@ -235,9 +239,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_154916) do
     t.boolean "practice_state", default: false, null: false
     t.datetime "practice_state_updated_at", precision: nil
     t.bigint "song_id", null: false
-    t.integer "total_votes_count", default: 0, null: false
     t.integer "votes_count", default: 0, null: false
     t.date "votes_date"
+    t.integer "total_votes_count", default: 0, null: false
     t.index ["band_id", "practice_state"], name: "index_songs_bands_on_band_id_and_practice_state"
     t.index ["band_id"], name: "index_songs_bands_on_band_id"
     t.index ["practice_state"], name: "index_songs_bands_on_practice_state"
@@ -296,12 +300,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_154916) do
     t.string "contact_name", null: false
     t.datetime "created_at", null: false
     t.string "location", null: false
-    t.string "map_url"
     t.string "name", null: false
     t.text "notes"
     t.string "phone_number", null: false
     t.datetime "updated_at", null: false
     t.string "website"
+    t.string "map_url"
     t.index ["archived"], name: "index_venues_on_archived"
     t.index ["archived_at"], name: "index_venues_on_archived_at"
     t.index ["band_id", "name"], name: "index_venues_on_band_id_and_name"

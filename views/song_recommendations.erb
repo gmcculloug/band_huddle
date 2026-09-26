@@ -26,6 +26,9 @@
                     <% end %>
                     <p style="color: #a0aec0; font-size: 0.85rem; margin-top: 8px;">
                         Submitted <%= rec.created_at.strftime('%b %-d, %Y') %>
+                        <% if rec.device_id.present? %>
+                            · Device <%= h(rec.device_id.first(12)) %>
+                        <% end %>
                     </p>
                 </div>
                 <div style="display: flex; gap: 10px;">
