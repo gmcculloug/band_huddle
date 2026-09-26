@@ -32,6 +32,33 @@ class Routes::PublicSongs < Sinatra::Base
     erb :public_songs, layout: :public_layout
   end
 
+  # GET /band/:slug/songs/vote_counts - Public vote counts for lightweight page polling
+  get '/band/:slug/songs/vote_counts' do
+    content_type :json
+    band = Band.find_by(slug: params[:slug])
+
+    unless band&.public_songs_enabled?
+      status 404
+      return { error: 'Songs not found' }.to_json
+    end
+
+    songs = Song.active.ready_for_band(band)
+      .select("songs.id, #{SongBand::VOTES_COUNT_SQL} AS votes_count, songs_bands.total_votes_count AS total_votes_count")
+      .to_a
+    voted_song_ids = voted_song_ids_for(request.ip, band, songs)
+
+    votes = songs.map do |song|
+      {
+        id: song.id,
+        votes_count: song.votes_count,
+        total_votes_count: song.total_votes_count,
+        voted: voted_song_ids.include?(song.id)
+      }
+    end
+
+    { votes: votes }.to_json
+  end
+
   # POST /band/:slug/songs/:id/upvote - Public up-vote, visible immediately, resets daily
   post '/band/:slug/songs/:id/upvote' do
     band = Band.find_by(slug: params[:slug])
@@ -51,7 +78,7 @@ class Routes::PublicSongs < Sinatra::Base
     else
       SongVote.create!(song: song, band: band, ip_address: request.ip)
       SongBand.record_vote!(song, band)
-      redirect "/band/#{band.slug}/songs?by=#{view_by}&success=#{URI.encode_www_form_component('Vote counted!')}"
+      redirect "/band/#{band.slug}/songs?by=#{view_by}&voted=#{song.id}"
     end
   end
 
@@ -74,7 +101,7 @@ class Routes::PublicSongs < Sinatra::Base
     else
       SongVote.retract!(request.ip, song, band)
       SongBand.retract_vote!(song, band)
-      redirect "/band/#{band.slug}/songs?by=#{view_by}&success=#{URI.encode_www_form_component('Vote removed')}"
+      redirect "/band/#{band.slug}/songs?by=#{view_by}&voted=#{song.id}"
     end
   end
 
@@ -128,7 +155,7 @@ class Routes::PublicSongs < Sinatra::Base
 
   def songs_for_band_view(band, view_by)
     songs = Song.active.ready_for_band(band)
-      .select("songs.*, #{SongBand::VOTES_COUNT_SQL} AS votes_count")
+      .select("songs.*, #{SongBand::VOTES_COUNT_SQL} AS votes_count, songs_bands.total_votes_count AS total_votes_count")
 
     case view_by
     when 'artist'

@@ -55,19 +55,31 @@ class SongBand < ActiveRecord::Base
     scope = where(song_id: song.id, band_id: band.id)
 
     if song_band.votes_date == today
-      scope.update_all('votes_count = votes_count + 1')
+      scope.update_all('votes_count = votes_count + 1, total_votes_count = total_votes_count + 1')
     else
-      scope.update_all(votes_count: 1, votes_date: today)
+      scope.update_all(['votes_count = 1, votes_date = ?, total_votes_count = total_votes_count + 1', today])
     end
     song_band
   end
 
   def self.retract_vote!(song, band)
     song_band = find_by_song_and_band(song, band)
-    return song_band if song_band.nil? || song_band.votes_date != Time.now.utc.to_date
+    return song_band if song_band.nil?
 
-    where(song_id: song.id, band_id: band.id).update_all('votes_count = GREATEST(votes_count - 1, 0)')
+    if song_band.votes_date == Time.now.utc.to_date
+      where(song_id: song.id, band_id: band.id)
+        .update_all('votes_count = GREATEST(votes_count - 1, 0), total_votes_count = GREATEST(total_votes_count - 1, 0)')
+    else
+      where(song_id: song.id, band_id: band.id).update_all('total_votes_count = GREATEST(total_votes_count - 1, 0)')
+    end
     song_band
+  end
+
+  def self.reset_votes_for_band!(band)
+    transaction do
+      where(band_id: band.id).update_all(votes_count: 0, votes_date: nil, total_votes_count: 0)
+      SongVote.where(band_id: band.id).delete_all
+    end
   end
 
   private

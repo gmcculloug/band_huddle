@@ -7,6 +7,77 @@ RSpec.describe 'Songs API', type: :request do
   before do
     # UserBand relationship is automatically created by the band factory
   end
+  describe 'POST /songs/reset_votes' do
+    it 'requires authentication' do
+      post '/songs/reset_votes'
+
+      expect(last_response).to be_redirect
+      expect(last_response.location).to include('/login')
+    end
+
+    it 'does not reset a band when the logged-in user is not a member' do
+      outsider = create(:user)
+      song = create(:song, bands: [band])
+      SongBand.record_vote!(song, band)
+      post '/test_auth', user_id: outsider.id, band_id: band.id
+
+      post '/songs/reset_votes'
+
+      expect(last_response).to be_redirect
+      expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(1)
+    end
+
+    it 'resets the selected band counts and clears its voter records' do
+      login_as(user, band)
+      song = create(:song, bands: [band])
+      SongBand.record_vote!(song, band)
+      SongBand.record_vote!(song, band)
+      SongVote.create!(song: song, band: band, ip_address: '192.0.2.10')
+
+      post '/songs/reset_votes'
+
+      song_band = SongBand.find_by_song_and_band(song, band)
+      expect(last_response).to be_redirect
+      expect(last_response.location).to include('votes_reset=1')
+      expect(song_band.votes_count).to eq(0)
+      expect(song_band.votes_date).to be_nil
+      expect(song_band.total_votes_count).to eq(0)
+      expect(SongVote.where(band_id: band.id)).to be_empty
+
+      follow_redirect!
+      expect(last_response.body).to include('Song vote counts have been reset')
+    end
+
+    it 'allows a regular band member to reset votes' do
+      member = create(:user)
+      create(:user_band, user: member, band: band, role: 'member')
+      song = create(:song, bands: [band])
+      SongBand.record_vote!(song, band)
+      login_as(member, band)
+
+      post '/songs/reset_votes'
+
+      expect(last_response).to be_redirect
+      expect(SongBand.find_by_song_and_band(song, band).total_votes_count).to eq(0)
+    end
+
+    it 'does not change vote counts or voter records for another band' do
+      login_as(user, band)
+      current_song = create(:song, bands: [band])
+      other_band = create(:band)
+      other_song = create(:song, bands: [other_band])
+      SongBand.record_vote!(current_song, band)
+      SongBand.record_vote!(other_song, other_band)
+      other_vote = SongVote.create!(song: other_song, band: other_band, ip_address: '192.0.2.11')
+
+      post '/songs/reset_votes'
+
+      expect(SongBand.find_by_song_and_band(current_song, band).votes_count).to eq(0)
+      expect(SongBand.find_by_song_and_band(other_song, other_band).votes_count).to eq(1)
+      expect(SongVote.exists?(other_vote.id)).to be true
+    end
+  end
+
   describe 'GET /songs' do
     it 'returns a list of all songs' do
       login_as(user, band)

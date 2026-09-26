@@ -19,6 +19,7 @@ RSpec.describe SongBand do
 
       song_band = SongBand.find_by_song_and_band(song, band)
       expect(song_band.votes_count).to eq(2)
+      expect(song_band.total_votes_count).to eq(2)
     end
 
     it 'resets the count to 1 when the last vote was on a previous day' do
@@ -39,6 +40,18 @@ RSpec.describe SongBand do
 
       other_song_band = SongBand.find_by_song_and_band(song, other_band)
       expect(other_song_band).to be_nil
+    end
+
+    it 'increments the all-time total on every vote, even across days' do
+      SongBand.record_vote!(song, band)
+      SongBand.where(song_id: song.id, band_id: band.id)
+        .update_all(votes_date: 1.day.ago.to_date)
+
+      SongBand.record_vote!(song, band)
+
+      song_band = SongBand.find_by_song_and_band(song, band)
+      expect(song_band.total_votes_count).to eq(2)
+      expect(song_band.votes_count).to eq(1)
     end
   end
 
@@ -61,14 +74,34 @@ RSpec.describe SongBand do
       expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(0)
     end
 
-    it 'is a no-op when the last vote was on a previous day' do
+    it 'leaves the stale daily count untouched but still decrements the all-time total' do
       SongBand.record_vote!(song, band)
       SongBand.where(song_id: song.id, band_id: band.id)
         .update_all(votes_date: 1.day.ago.to_date)
 
       SongBand.retract_vote!(song, band)
 
-      expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(1)
+      song_band = SongBand.find_by_song_and_band(song, band)
+      expect(song_band.votes_count).to eq(1)
+      expect(song_band.total_votes_count).to eq(0)
+    end
+
+    it 'decrements the all-time total alongside a same-day retraction' do
+      SongBand.record_vote!(song, band)
+      SongBand.record_vote!(song, band)
+
+      SongBand.retract_vote!(song, band)
+
+      expect(SongBand.find_by_song_and_band(song, band).total_votes_count).to eq(1)
+    end
+
+    it 'does not let the all-time total go below zero' do
+      SongBand.record_vote!(song, band)
+
+      SongBand.retract_vote!(song, band)
+      SongBand.retract_vote!(song, band)
+
+      expect(SongBand.find_by_song_and_band(song, band).total_votes_count).to eq(0)
     end
 
     it 'is a no-op when there is no songs_bands row yet' do

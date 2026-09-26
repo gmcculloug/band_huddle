@@ -54,6 +54,14 @@ class Routes::Songs < Sinatra::Base
     erb :songs
   end
 
+  post '/songs/reset_votes' do
+    require_login
+    ensure_band_context
+
+    SongBand.reset_votes_for_band!(current_band)
+    redirect '/songs?votes_reset=1'
+  end
+
   get '/songs/new' do
     require_login
     ensure_band_context

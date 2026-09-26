@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_25_183906) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_27_154916) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -235,6 +235,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_183906) do
     t.boolean "practice_state", default: false, null: false
     t.datetime "practice_state_updated_at", precision: nil
     t.bigint "song_id", null: false
+    t.integer "total_votes_count", default: 0, null: false
     t.integer "votes_count", default: 0, null: false
     t.date "votes_date"
     t.index ["band_id", "practice_state"], name: "index_songs_bands_on_band_id_and_practice_state"
@@ -242,6 +243,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_183906) do
     t.index ["practice_state"], name: "index_songs_bands_on_practice_state"
     t.index ["song_id", "band_id"], name: "index_songs_bands_on_song_id_and_band_id", unique: true
     t.index ["song_id"], name: "index_songs_bands_on_song_id"
+    t.index ["total_votes_count"], name: "index_songs_bands_on_total_votes_count"
     t.index ["votes_count"], name: "index_songs_bands_on_votes_count"
     t.index ["votes_date"], name: "index_songs_bands_on_votes_date"
   end

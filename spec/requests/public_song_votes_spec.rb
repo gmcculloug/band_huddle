@@ -10,16 +10,51 @@ RSpec.describe 'Public Song Votes Routes', type: :request do
     song
   end
 
+  describe 'GET /band/:slug/songs/vote_counts' do
+    it 'returns current daily and total counts for the band songs' do
+      song = add_song(band)
+      SongBand.record_vote!(song, band)
+      SongBand.record_vote!(song, band)
+
+      get "/band/#{band.slug}/songs/vote_counts"
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to include('application/json')
+      expect(JSON.parse(last_response.body)['votes']).to eq([
+        { 'id' => song.id, 'votes_count' => 2, 'total_votes_count' => 2, 'voted' => false }
+      ])
+    end
+
+    it 'reports the requesting visitor vote state' do
+      song = add_song(band)
+      post "/band/#{band.slug}/songs/#{song.id}/upvote"
+
+      get "/band/#{band.slug}/songs/vote_counts"
+      expect(JSON.parse(last_response.body)['votes'].first['voted']).to be true
+
+      post "/band/#{band.slug}/songs/#{song.id}/downvote"
+      get "/band/#{band.slug}/songs/vote_counts"
+      expect(JSON.parse(last_response.body)['votes'].first['voted']).to be false
+    end
+
+    it 'does not return vote counts when public songs are disabled' do
+      get "/band/#{disabled_band.slug}/songs/vote_counts"
+
+      expect(last_response.status).to eq(404)
+      expect(JSON.parse(last_response.body)).to eq('error' => 'Songs not found')
+    end
+  end
+
   describe 'POST /band/:slug/songs/:id/upvote' do
     context 'with a fresh vote' do
-      it 'increments the vote count and redirects with success' do
+      it 'increments the vote count and redirects with the voted song id' do
         song = add_song(band)
 
         post "/band/#{band.slug}/songs/#{song.id}/upvote"
 
         expect(last_response.status).to eq(302)
         expect(last_response.location).to include("/band/#{band.slug}/songs")
-        expect(last_response.location).to include('success=')
+        expect(last_response.location).to include("voted=#{song.id}")
 
         song_band = SongBand.find_by_song_and_band(song, band)
         expect(song_band.votes_count).to eq(1)
@@ -40,6 +75,16 @@ RSpec.describe 'Public Song Votes Routes', type: :request do
         get "/band/#{band.slug}/songs"
 
         expect(last_response.body).to match(/Freebird.*vote-count">1</m)
+      end
+
+      it 'shows the all-time total alongside the daily count' do
+        song = add_song(band, title: 'Freebird')
+        SongBand.where(song_id: song.id, band_id: band.id).update_all(total_votes_count: 41)
+
+        post "/band/#{band.slug}/songs/#{song.id}/upvote"
+        get "/band/#{band.slug}/songs"
+
+        expect(last_response.body).to match(/Freebird.*42 total/m)
       end
     end
 
@@ -62,7 +107,7 @@ RSpec.describe 'Public Song Votes Routes', type: :request do
         post "/band/#{band.slug}/songs/#{song.id}/upvote"
         post "/band/#{band.slug}/songs/#{other_song.id}/upvote"
 
-        expect(last_response.location).to include('success=')
+        expect(last_response.location).to include("voted=#{other_song.id}")
         expect(SongBand.find_by_song_and_band(other_song, band).votes_count).to eq(1)
       end
     end
@@ -135,7 +180,7 @@ RSpec.describe 'Public Song Votes Routes', type: :request do
       post "/band/#{band.slug}/songs/#{song.id}/downvote"
 
       expect(last_response.status).to eq(302)
-      expect(last_response.location).to include('success=')
+      expect(last_response.location).to include("voted=#{song.id}")
       expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(0)
     end
 
@@ -146,7 +191,7 @@ RSpec.describe 'Public Song Votes Routes', type: :request do
 
       post "/band/#{band.slug}/songs/#{song.id}/upvote"
 
-      expect(last_response.location).to include('success=')
+      expect(last_response.location).to include("voted=#{song.id}")
       expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(1)
     end
 

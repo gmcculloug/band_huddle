@@ -25,6 +25,10 @@
             </svg>
             Add Song
         </a>
+        <form method="post" action="/songs/reset_votes" style="display: inline;"
+              onsubmit="return confirm('Reset all public song vote counts for this band? Recent vote records will also be cleared so voting can start fresh. This cannot be undone.');">
+            <button type="submit" class="btn btn-danger">Reset Song Votes</button>
+        </form>
     </div>
 </div>
 
@@ -309,6 +313,10 @@ function togglePracticeState(songId, button) {
     <div class="message message--success">
         ✅ Successfully copied <%= params[:copied] %> song<%= params[:copied].to_i == 1 ? '' : 's' %> to your band!
     </div>
+<% end %>
+
+<% if params[:votes_reset] == '1' %>
+    <div class="message message--success">✅ Song vote counts have been reset. Visitors can vote again.</div>
 <% end %>
 
 <% if params[:success] %>
