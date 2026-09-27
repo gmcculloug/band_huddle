@@ -59,7 +59,7 @@
                         _action = _voted ? 'downvote' : 'upvote'
                     %>
                     <form method="post" action="/band/<%= @band.slug %>/songs/<%= song.id %>/<%= _action %>?by=<%= @view_by %>" class="vote-form">
-                        <button type="submit" class="vote-btn" aria-label="<%= _voted ? 'Remove vote for' : 'Upvote' %> <%= h(song.title) %>"><%= _voted ? '▼' : '▲' %></button>
+                        <button type="submit" class="vote-btn" aria-label="<%= _voted ? 'Remove vote for' : 'Upvote' %> <%= h(song.title) %>"><%= _voted ? '✘' : '▲' %></button>
                         <span class="vote-count<%= ' vote-count--flash' if params[:voted].to_s == song.id.to_s %>"><%= song.votes_count %></span>
                         <span class="vote-total"><%= song.total_votes_count %> total</span>
                     </form>
@@ -102,7 +102,7 @@
                                 _action = _voted ? 'downvote' : 'upvote'
                             %>
                             <form method="post" action="/band/<%= @band.slug %>/songs/<%= song.id %>/<%= _action %>?by=<%= @view_by %>" class="vote-form">
-                                <button type="submit" class="vote-btn" aria-label="<%= _voted ? 'Remove vote for' : 'Upvote' %> <%= h(song.title) %>"><%= _voted ? '▼' : '▲' %></button>
+                                <button type="submit" class="vote-btn" aria-label="<%= _voted ? 'Remove vote for' : 'Upvote' %> <%= h(song.title) %>"><%= _voted ? '✘' : '▲' %></button>
                                 <span class="vote-count<%= ' vote-count--flash' if params[:voted].to_s == song.id.to_s %>"><%= song.votes_count %></span>
                                 <span class="vote-total"><%= song.total_votes_count %> total</span>
                             </form>
@@ -155,7 +155,7 @@
                             form.action = form.action.replace(/\/(upvote|downvote)(?=\?|$)/, '/' + action);
                         }
                         if (button) {
-                            button.textContent = vote.voted ? '▼' : '▲';
+                            button.textContent = vote.voted ? '✘' : '▲';
                             button.setAttribute('aria-label', (vote.voted ? 'Remove vote for ' : 'Upvote ') + row.dataset.songTitle);
                         }
                     });
