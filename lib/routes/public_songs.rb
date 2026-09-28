@@ -71,14 +71,15 @@ class Routes::PublicSongs < Sinatra::Base
     song = Song.active.ready_for_band(band).find_by(id: params[:id])
 
     if song.nil?
-      redirect "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component('Song not found')}"
+      message = 'Song not found'
+      vote_response(nil, band, false, "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component(message)}", message)
     elsif SongVote.rate_limited?(device_id, song, band)
-      already_voted_message = "You've already voted for this song recently"
-      redirect "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component(already_voted_message)}"
+      message = "You've already voted for this song recently"
+      vote_response(song, band, false, "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component(message)}", message)
     else
       SongVote.create!(song: song, band: band, ip_address: request.ip, device_id: device_id)
       SongBand.record_vote!(song, band)
-      redirect "/band/#{band.slug}/songs?by=#{view_by}&voted=#{song.id}"
+      vote_response(song, band, true, "/band/#{band.slug}/songs?by=#{view_by}&voted=#{song.id}")
     end
   end
 
@@ -94,14 +95,15 @@ class Routes::PublicSongs < Sinatra::Base
     song = Song.active.ready_for_band(band).find_by(id: params[:id])
 
     if song.nil?
-      redirect "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component('Song not found')}"
+      message = 'Song not found'
+      vote_response(nil, band, false, "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component(message)}", message)
     elsif !SongVote.voted_today?(device_id, song, band)
-      no_vote_message = "You haven't voted for this song today"
-      redirect "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component(no_vote_message)}"
+      message = "You haven't voted for this song today"
+      vote_response(song, band, false, "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component(message)}", message)
     else
       SongVote.retract!(device_id, song, band)
       SongBand.retract_vote!(song, band)
-      redirect "/band/#{band.slug}/songs?by=#{view_by}&voted=#{song.id}"
+      vote_response(song, band, false, "/band/#{band.slug}/songs?by=#{view_by}&voted=#{song.id}")
     end
   end
 
@@ -144,6 +146,31 @@ class Routes::PublicSongs < Sinatra::Base
   end
 
   private
+
+  def vote_response(song, band, voted, redirect_url, error = nil)
+    unless request.env['HTTP_ACCEPT'].to_s.include?('application/json')
+      redirect redirect_url
+      return
+    end
+
+    content_type :json
+    if error
+      status 422
+      return { success: false, error: error }.to_json
+    end
+
+    song_band = SongBand.find_by_song_and_band(song, band)
+    votes_count = song_band&.votes_date == Time.now.utc.to_date ? song_band.votes_count : 0
+    {
+      success: true,
+      vote: {
+        id: song.id,
+        votes_count: votes_count,
+        total_votes_count: song_band&.total_votes_count || 0,
+        voted: voted
+      }
+    }.to_json
+  end
 
   def voted_song_ids_for(device_id, band, songs)
     return [].to_set if songs.empty?

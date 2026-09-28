@@ -60,6 +60,23 @@ RSpec.describe 'Public Song Votes Routes', type: :request do
         expect(song_band.votes_count).to eq(1)
       end
 
+      it 'returns the updated vote state for an asynchronous request' do
+        song = add_song(band)
+
+        post "/band/#{band.slug}/songs/#{song.id}/upvote", {}, 'HTTP_ACCEPT' => 'application/json'
+
+        expect(last_response.status).to eq(200)
+        expect(JSON.parse(last_response.body)).to eq(
+          'success' => true,
+          'vote' => {
+            'id' => song.id,
+            'votes_count' => 1,
+            'total_votes_count' => 1,
+            'voted' => true
+          }
+        )
+      end
+
       it 'preserves the sort mode in the redirect' do
         song = add_song(band)
 
@@ -74,17 +91,17 @@ RSpec.describe 'Public Song Votes Routes', type: :request do
         post "/band/#{band.slug}/songs/#{song.id}/upvote"
         get "/band/#{band.slug}/songs"
 
-        expect(last_response.body).to match(/Freebird.*vote-count">1</m)
+        expect(last_response.body).to match(/Freebird.*vote-count[^\"]*vote-count--voted[^\"]*">1</m)
       end
 
-      it 'shows the all-time total alongside the daily count' do
+      it 'does not display the all-time vote total' do
         song = add_song(band, title: 'Freebird')
         SongBand.where(song_id: song.id, band_id: band.id).update_all(total_votes_count: 41)
 
         post "/band/#{band.slug}/songs/#{song.id}/upvote"
         get "/band/#{band.slug}/songs"
 
-        expect(last_response.body).to match(/Freebird.*42 total/m)
+        expect(last_response.body).not_to include('42 total')
       end
     end
 
@@ -198,6 +215,20 @@ RSpec.describe 'Public Song Votes Routes', type: :request do
       expect(last_response.status).to eq(302)
       expect(last_response.location).to include("voted=#{song.id}")
       expect(SongBand.find_by_song_and_band(song, band).votes_count).to eq(0)
+    end
+
+    it 'returns the changed count after an asynchronous downvote' do
+      song = add_song(band)
+      post "/band/#{band.slug}/songs/#{song.id}/upvote"
+
+      post "/band/#{band.slug}/songs/#{song.id}/downvote", {}, 'HTTP_ACCEPT' => 'application/json'
+
+      expect(last_response.status).to eq(200)
+      expect(JSON.parse(last_response.body)['vote']).to include(
+        'votes_count' => 0,
+        'total_votes_count' => 0,
+        'voted' => false
+      )
     end
 
     it 'allows voting again after a downvote' do

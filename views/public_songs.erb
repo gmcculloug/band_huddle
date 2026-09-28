@@ -60,8 +60,7 @@
                     %>
                     <form method="post" action="/band/<%= @band.slug %>/songs/<%= song.id %>/<%= _action %>?by=<%= @view_by %>" class="vote-form">
                         <button type="submit" class="vote-btn" aria-label="<%= _voted ? 'Remove vote for' : 'Upvote' %> <%= h(song.title) %>"><%= _voted ? '✘' : '▲' %></button>
-                        <span class="vote-count<%= ' vote-count--flash' if params[:voted].to_s == song.id.to_s %>"><%= song.votes_count %></span>
-                        <span class="vote-total"><%= song.total_votes_count %> total</span>
+                        <span class="vote-count<%= ' vote-count--voted' if _voted %><%= ' vote-count--flash' if params[:voted].to_s == song.id.to_s %>"><%= song.votes_count %></span>
                     </form>
                 </div>
             <% end %>
@@ -103,8 +102,7 @@
                             %>
                             <form method="post" action="/band/<%= @band.slug %>/songs/<%= song.id %>/<%= _action %>?by=<%= @view_by %>" class="vote-form">
                                 <button type="submit" class="vote-btn" aria-label="<%= _voted ? 'Remove vote for' : 'Upvote' %> <%= h(song.title) %>"><%= _voted ? '✘' : '▲' %></button>
-                                <span class="vote-count<%= ' vote-count--flash' if params[:voted].to_s == song.id.to_s %>"><%= song.votes_count %></span>
-                                <span class="vote-total"><%= song.total_votes_count %> total</span>
+                                <span class="vote-count<%= ' vote-count--voted' if _voted %><%= ' vote-count--flash' if params[:voted].to_s == song.id.to_s %>"><%= song.votes_count %></span>
                             </form>
                         </div>
                     <% end %>
@@ -128,6 +126,43 @@
             var isFetching = false;
             if (!votesUrl) return;
 
+            function updateVoteRow(row, vote) {
+                var count = row.querySelector('.vote-count');
+                var form = row.querySelector('.vote-form');
+                var button = form && form.querySelector('.vote-btn');
+                if (count) {
+                    count.textContent = vote.votes_count;
+                    count.classList.remove('vote-count--flash');
+                    void count.offsetWidth;
+                    count.classList.add('vote-count--flash');
+                    count.classList.toggle('vote-count--voted', vote.voted);
+                }
+                if (form) {
+                    var action = vote.voted ? 'downvote' : 'upvote';
+                    form.action = form.action.replace(/\/(upvote|downvote)(?=\?|$)/, '/' + action);
+                }
+                if (button) {
+                    button.textContent = vote.voted ? '✘' : '▲';
+                    button.setAttribute('aria-label', (vote.voted ? 'Remove vote for ' : 'Upvote ') + row.dataset.songTitle);
+                }
+            }
+
+            function sortVotesCard() {
+                var votesCard = document.querySelector('.song-card--votes');
+                if (!votesCard) return;
+                var rows = Array.prototype.slice.call(votesCard.children);
+                var sortedRows = rows.slice().sort(function(a, b) {
+                    var countA = Number(a.querySelector('.vote-count').textContent) || 0;
+                    var countB = Number(b.querySelector('.vote-count').textContent) || 0;
+                    var titleA = a.querySelector('.song-title').textContent.toLocaleLowerCase();
+                    var titleB = b.querySelector('.song-title').textContent.toLocaleLowerCase();
+                    return countB - countA || titleA.localeCompare(titleB);
+                });
+                if (sortedRows.some(function(row, index) { return row !== rows[index]; })) {
+                    sortedRows.forEach(function(row) { votesCard.appendChild(row); });
+                }
+            }
+
             async function refreshVoteCounts() {
                 if (document.hidden || isFetching) return;
                 isFetching = true;
@@ -145,11 +180,12 @@
                         if (!row) return;
 
                         var count = row.querySelector('.vote-count');
-                        var total = row.querySelector('.vote-total');
                         var form = row.querySelector('.vote-form');
                         var button = form && form.querySelector('.vote-btn');
-                        if (count) count.textContent = vote.votes_count;
-                        if (total) total.textContent = vote.total_votes_count + ' total';
+                        if (count) {
+                            count.textContent = vote.votes_count;
+                            count.classList.toggle('vote-count--voted', vote.voted);
+                        }
                         if (form) {
                             var action = vote.voted ? 'downvote' : 'upvote';
                             form.action = form.action.replace(/\/(upvote|downvote)(?=\?|$)/, '/' + action);
@@ -160,27 +196,53 @@
                         }
                     });
 
-                    var votesCard = document.querySelector('.song-card--votes');
-                    if (votesCard) {
-                        var rows = Array.prototype.slice.call(votesCard.children);
-                        var sortedRows = rows.slice().sort(function(a, b) {
-                            var countA = Number(a.querySelector('.vote-count').textContent) || 0;
-                            var countB = Number(b.querySelector('.vote-count').textContent) || 0;
-                            var titleA = a.querySelector('.song-title').textContent.toLocaleLowerCase();
-                            var titleB = b.querySelector('.song-title').textContent.toLocaleLowerCase();
-                            return countB - countA || titleA.localeCompare(titleB);
-                        });
-
-                        if (sortedRows.some(function(row, index) { return row !== rows[index]; })) {
-                            sortedRows.forEach(function(row) { votesCard.appendChild(row); });
-                        }
-                    }
+                    sortVotesCard();
                 } catch (error) {
                     // Polling is best-effort; keep the last displayed counts on failure.
                 } finally {
                     isFetching = false;
                 }
             }
+
+            var feedback = document.createElement('div');
+            feedback.className = 'error-banner';
+            feedback.setAttribute('role', 'alert');
+            feedback.hidden = true;
+            heading.insertAdjacentElement('afterend', feedback);
+
+            document.addEventListener('submit', async function(event) {
+                var form = event.target.closest('.vote-form');
+                if (!form) return;
+                event.preventDefault();
+
+                var button = form.querySelector('.vote-btn');
+                if (button) button.disabled = true;
+                feedback.hidden = true;
+
+                try {
+                    var response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json' },
+                        cache: 'no-store'
+                    });
+                    var payload = await response.json();
+                    if (!response.ok || !payload.success) {
+                        feedback.textContent = payload.error || 'Unable to update your vote. Please try again.';
+                        feedback.hidden = false;
+                        return;
+                    }
+
+                    var row = form.closest('.song-row');
+                    if (row) updateVoteRow(row, payload.vote);
+                    sortVotesCard();
+                    refreshVoteCounts();
+                } catch (error) {
+                    feedback.textContent = 'Unable to update your vote. Please try again.';
+                    feedback.hidden = false;
+                } finally {
+                    if (button) button.disabled = false;
+                }
+            });
 
             window.setInterval(refreshVoteCounts, 5000);
         })();
