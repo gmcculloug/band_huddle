@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </label>
                             <div style="flex: 1; min-width: 0;">
                                 <div style="font-weight: bold; color: #2d3748; margin-bottom: 5px; word-break: break-word;">
-                                    <%= song_catalog.title %>
+                                    <%= display_song_title(song_catalog.title) %>
                                     <% if song_catalog.artist.present? %>
                                         <span style="color: #718096; font-weight: normal; font-size: 0.9rem;"> • <%= song_catalog.artist %></span>
                                     <% end %>

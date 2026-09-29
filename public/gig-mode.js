@@ -236,7 +236,7 @@ class GigMode {
                 <div class="song-header">
                     <h3 class="song-title">
                         <span class="song-count">${song.position}.</span>
-                        ${incomingArrow}${practiceBadge}${this.escapeHtml(song.title)}${outgoingArrow}
+                        ${incomingArrow}${practiceBadge}${this.displaySongTitle(song.title)}${outgoingArrow}
                     </h3>
                     <div class="song-meta">
                         <div class="song-key">${this.escapeHtml(song.key || 'N/A')}</div>
@@ -274,7 +274,7 @@ class GigMode {
         this.currentSong = song;
 
         // Populate modal content
-        document.getElementById('song-title').textContent = song.title;
+        document.getElementById('song-title').innerHTML = this.displaySongTitle(song.title);
 
         // Build combined content with stats, notes, and lyrics
         let content = '';
@@ -801,6 +801,16 @@ class GigMode {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    displaySongTitle(title) {
+        const marker = '\u0000';
+        let markedTitle = String(title || '')
+            .replace(/(?:https?:\/\/|www\.)[^\s<>]+|(?:[\w-]+\.)+[a-z]{2,}(?:\/[^\s<>]*)?/gi, url =>
+                url.replace(/[.:\/?&=#-]/g, character => character + marker)
+            )
+            .replace(/(\d)([-/])(?=\d)/g, `$1$2${marker}`);
+        return this.escapeHtml(markedTitle).split(marker).join('<wbr>');
     }
 
     // Auto-scroll functionality

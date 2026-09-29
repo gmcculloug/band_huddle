@@ -74,7 +74,7 @@
             <% @available_songs.each do |song| %>
                 <div class="song-item available-song" data-song-id="<%= song.id %>" draggable="true" style="margin-bottom: 8px; padding: 10px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: grab; transition: all 0.2s ease;">
                     <div style="font-weight: bold; color: #2d3748; font-size: 0.9rem;">
-                        <%= song.title %>
+                        <%= display_song_title(song.title) %>
                         <% if song.key.present? %>
                             <span style="background: #667eea; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; margin-left: 8px;"><%= song.key %></span>
                         <% end %>
@@ -102,6 +102,19 @@ let allBandSongs = [];
 let setsSongs = {};
 let availableSongsCollapsed = false;
 let selectedSet = 1; // Track which set is selected for adding songs
+
+function displaySongTitle(title) {
+    const marker = '\u0000';
+    let markedTitle = String(title || '')
+        .replace(/(?:https?:\/\/|www\.)[^\s<>]+|(?:[\w-]+\.)+[a-z]{2,}(?:\/[^\s<>]*)?/gi, url =>
+            url.replace(/[.:\/?&=#-]/g, character => character + marker)
+        )
+        .replace(/(\d)([-/])(?=\d)/g, `$1$2${marker}`);
+    const escapedTitle = markedTitle.replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[character]);
+    return escapedTitle.split(marker).join('<wbr>');
+}
 
 // Auto-save and undo state management
 let stateHistory = [];           // Array of state snapshots (max 50 operations)
@@ -1012,7 +1025,7 @@ function addSongToSet(setContainer, song, transitionData = null) {
 
     songDiv.innerHTML = `
         <div style="font-weight: bold; color: #2d3748; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
-            ${incomingArrow}${practiceState.badge}${song.title}${keyHtml}${outgoingArrow}
+            ${incomingArrow}${practiceState.badge}${displaySongTitle(song.title)}${keyHtml}${outgoingArrow}
         </div>
         <button type="button" onclick="removeSongFromSet(this)" style="position: absolute; top: 5px; right: 5px; background: #f56565; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer;">×</button>
     `;
@@ -1098,7 +1111,7 @@ function updateAvailableSongs() {
 
         songDiv.innerHTML = `
             <div style="font-weight: bold; color: #2d3748; font-size: 0.9rem; display: flex; align-items: center; gap: 0.25rem;">
-                ${practiceState.badge}${song.title}${keyHtml}
+                ${practiceState.badge}${displaySongTitle(song.title)}${keyHtml}
             </div>
         `;
 

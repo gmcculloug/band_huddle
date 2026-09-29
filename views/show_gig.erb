@@ -206,7 +206,7 @@
                         <% if is_practice %>
                           <span class="practice-badge" style="background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-right: 0.5rem; font-weight: bold;">P</span>
                         <% end %>
-                        <%= gig_song.song.title %>
+                        <%= display_song_title(gig_song.song.title) %>
                         <% if gig_song.song.notes.present? %>
                           <span style="color: #718096; font-weight: normal; font-size: 0.9rem;"> • <%= gig_song.song.notes %></span>
                         <% end %>
@@ -671,4 +671,3 @@ document.addEventListener('click', function(event) {
     animation: showTooltip 0.3s ease forwards 0.5s;
 }
 </style>
-

@@ -35,7 +35,7 @@
                                 <input type="checkbox" class="song-checkbox" name="song_catalog_ids[]" value="<%= song_catalog.id %>" style="margin: 0;">
                                 <div style="flex: 1;">
                                     <div style="font-weight: bold; color: #2d3748; margin-bottom: 3px;">
-                                        <%= song_catalog.title %>
+                                        <%= display_song_title(song_catalog.title) %>
                                         <% if song_catalog.artist.present? %>
                                             <span style="color: #718096; font-weight: normal; font-size: 0.9rem;"> • <%= song_catalog.artist %></span>
                                         <% end %>

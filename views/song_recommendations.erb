@@ -19,7 +19,7 @@
         <div class="card" style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
                 <div>
-                    <h3 style="margin-bottom: 4px;"><%= h(rec.title) %></h3>
+                    <h3 style="margin-bottom: 4px;"><%= display_song_title(rec.title) %></h3>
                     <p style="color: #718096; margin-bottom: 8px;"><%= h(rec.artist) %></p>
                     <% if rec.notes.present? %>
                         <p><%= h(rec.notes) %></p>

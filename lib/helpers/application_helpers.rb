@@ -7,6 +7,21 @@ module ApplicationHelpers
     Rack::Utils.escape_html(text.to_s)
   end
 
+  # Escape a song title and add invisible break opportunities inside text that
+  # mobile browsers commonly turn into links. The stored title remains intact.
+  def display_song_title(text)
+    title = text.to_s
+    break_marker = "\u0000"
+    url_pattern = %r{(?:https?://|www\.)[^\s<>]+|(?:[[:alnum:]-]+\.)+[[:alpha:]]{2,}(?:/[^\s<>]*)?}i
+
+    title = title.gsub(url_pattern) do |url|
+      url.gsub(/([.:\/?&=#-])/) { |separator| "#{separator}#{break_marker}" }
+    end
+    title = title.gsub(/(?<=\d)([-\/])(?=\d)/) { |separator| "#{separator}#{break_marker}" }
+
+    h(title).gsub(break_marker, '<wbr>')
+  end
+
   def device_id
     request.env[BandHuddle::DeviceId::ENV_KEY]
   end
