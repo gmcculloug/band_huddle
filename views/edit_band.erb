@@ -257,18 +257,47 @@
                     Upload an image to display in the header of your public schedule page instead of plain text.
                 </p>
 
-                <% if @band.logo_filename.present? %>
-                    <div style="margin-bottom: 10px;">
-                        <img src="/uploads/band_logos/<%= @band.logo_filename %>" alt="Current logo"
-                             style="max-height: 100px; max-width: 200px; object-fit: contain; border: 1px solid #d1d5db; border-radius: 6px; padding: 4px; background: #374151;">
+                <% selected_logo_shape = @logo_shape || @band.logo_shape.presence || 'round' %>
+                <div style="margin-bottom: 12px;">
+                    <p style="font-weight: 600; margin: 0 0 8px;">Image shape</p>
+                    <div style="display: flex; gap: 18px;">
+                        <label style="display: flex; align-items: center; gap: 6px;">
+                            <input type="radio" name="logo_shape" value="round"
+                                   <%= 'checked' if selected_logo_shape == 'round' %>>
+                            Round
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px;">
+                            <input type="radio" name="logo_shape" value="square"
+                                   <%= 'checked' if selected_logo_shape == 'square' %>>
+                            Square
+                        </label>
                     </div>
+                </div>
+
+                <div id="band-logo-preview" data-current-src="<%= h(@band.logo_filename.present? ? "/uploads/band_logos/#{@band.logo_filename}" : '') %>"
+                     style="margin-bottom: 10px; min-height: 24px;">
+                    <img id="band-logo-preview-image" alt="Band logo preview"
+                         class="logo-shape-preview <%= selected_logo_shape %>"
+                         <%= "src=\"/uploads/band_logos/#{@band.logo_filename}\"" if @band.logo_filename.present? %>
+                         style="max-height: 120px; max-width: 80%; object-fit: contain; display: <%= @band.logo_filename.present? ? 'block' : 'none' %>;">
+                    <p id="band-logo-preview-empty" style="color: #6b7280; font-size: 0.9rem; margin: 0; <%= 'display: none;' if @band.logo_filename.present? %>">
+                        Choose an image to preview how it will look on the public page.
+                    </p>
+                </div>
+
+                <style>
+                    .logo-shape-preview.round { border-radius: 50%; }
+                    .logo-shape-preview.square { border-radius: 0; }
+                </style>
+
+                <% if @band.logo_filename.present? %>
                     <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 0.9rem; color: #dc2626;">
-                        <input type="checkbox" name="remove_logo" value="1">
+                        <input type="checkbox" id="remove-band-logo" name="remove_logo" value="1">
                         Remove current logo
                     </label>
                 <% end %>
 
-                <input type="file" name="logo_image" accept="image/*" style="margin-bottom: 6px; display: block;">
+                <input type="file" id="band-logo-file" name="logo_image" accept="image/*" style="margin-bottom: 6px; display: block;">
                 <p style="font-size: 0.85rem; color: #6b7280;">JPG, PNG, GIF, or WebP &middot; max 5 MB</p>
             </div>
 
@@ -333,6 +362,54 @@
     </div>
 
     <script>
+        const bandLogoPreview = document.getElementById('band-logo-preview');
+        if (bandLogoPreview) {
+            const previewImage = document.getElementById('band-logo-preview-image');
+            const previewEmpty = document.getElementById('band-logo-preview-empty');
+            const logoFileInput = document.getElementById('band-logo-file');
+            const removeLogoInput = document.getElementById('remove-band-logo');
+            const currentLogoSrc = bandLogoPreview.dataset.currentSrc;
+            let selectedLogoPreviewUrl = null;
+
+            function updateBandLogoPreview() {
+                const selectedShape = document.querySelector('input[name="logo_shape"]:checked');
+                previewImage.classList.toggle('round', selectedShape && selectedShape.value === 'round');
+                previewImage.classList.toggle('square', selectedShape && selectedShape.value === 'square');
+
+                if (selectedLogoPreviewUrl) {
+                    previewImage.src = selectedLogoPreviewUrl;
+                    previewImage.style.display = 'block';
+                    previewEmpty.style.display = 'none';
+                } else if (removeLogoInput && removeLogoInput.checked) {
+                    previewImage.style.display = 'none';
+                    previewEmpty.style.display = 'block';
+                } else if (currentLogoSrc) {
+                    previewImage.src = currentLogoSrc;
+                    previewImage.style.display = 'block';
+                    previewEmpty.style.display = 'none';
+                } else {
+                    previewImage.style.display = 'none';
+                    previewEmpty.style.display = 'block';
+                }
+            }
+
+            logoFileInput.addEventListener('change', function() {
+                if (selectedLogoPreviewUrl) {
+                    URL.revokeObjectURL(selectedLogoPreviewUrl);
+                    selectedLogoPreviewUrl = null;
+                }
+                const selectedFile = logoFileInput.files[0];
+                if (selectedFile) selectedLogoPreviewUrl = URL.createObjectURL(selectedFile);
+                updateBandLogoPreview();
+            });
+
+            document.querySelectorAll('input[name="logo_shape"]').forEach(function(input) {
+                input.addEventListener('change', updateBandLogoPreview);
+            });
+            if (removeLogoInput) removeLogoInput.addEventListener('change', updateBandLogoPreview);
+            updateBandLogoPreview();
+        }
+
         function togglePublicScheduleInfo(checkbox) {
             const infoDiv = document.getElementById('public-schedule-info');
             if (checkbox.checked) {
@@ -440,4 +517,4 @@
             </form>
         </div>
     <% end %>
-</div> 
+</div>

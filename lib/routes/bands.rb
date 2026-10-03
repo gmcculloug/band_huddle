@@ -482,10 +482,17 @@ class Routes::Bands < Sinatra::Base
     end
 
     public_schedule_enabled = params[:public_schedule_enabled] == '1'
+    requested_logo_shape = params[:logo_shape].to_s
+    @logo_shape = if %w[round square].include?(requested_logo_shape)
+                    requested_logo_shape
+                  else
+                    @band.logo_shape.presence || 'round'
+                  end
 
     band_updates = {
       public_schedule_enabled: public_schedule_enabled,
-      show_band_name: params[:show_band_name] == '1'
+      show_band_name: params[:show_band_name] == '1',
+      logo_shape: @logo_shape
     }
 
     if params[:remove_logo] == '1' && @band.logo_filename.present?

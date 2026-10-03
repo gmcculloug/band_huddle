@@ -16,6 +16,7 @@ class Band < ActiveRecord::Base
   validates :name, presence: true
   validates :name, uniqueness: true
   validates :slug, uniqueness: true, allow_nil: true
+  validates :logo_shape, inclusion: { in: %w[round square] }
   validates :google_calendar_id, presence: true, if: :google_calendar_enabled?
 
   before_save :generate_slug, if: -> { new_record? || slug.blank? }
