@@ -1,4 +1,5 @@
 require 'sinatra/base'
+require 'uri'
 
 module Routes
 end
@@ -546,6 +547,43 @@ class Routes::Bands < Sinatra::Base
     @band.update!(public_songs_enabled: params[:public_songs_enabled] == '1')
 
     @public_songs_success = "Public songs settings updated successfully"
+    erb :edit_band
+  end
+
+  post '/bands/:id/social_media_settings' do
+    require_login
+    @band = user_bands.includes(:user_bands, :owners).find(params[:id])
+    @user_bands_by_user_id = @band.user_bands.index_by(&:user_id)
+
+    unless @band.users.include?(current_user)
+      @social_media_error = "You must be a member of this band to configure social media links"
+      return erb :edit_band
+    end
+
+    submitted_links = params[:social_media_links].is_a?(Hash) ? params[:social_media_links] : {}
+    @social_media_links = Band::SOCIAL_MEDIA_PLATFORMS.each_with_object({}) do |(platform, _label), links|
+      links[platform] = submitted_links[platform].to_s.strip
+    end
+
+    @social_media_links.each do |platform, url|
+      next if url.empty?
+
+      begin
+        parsed_url = URI.parse(url)
+      rescue URI::InvalidURIError
+        @social_media_error = "Enter a valid http:// or https:// URL for #{Band::SOCIAL_MEDIA_PLATFORMS[platform]}"
+        return erb :edit_band
+      end
+
+      unless %w[http https].include?(parsed_url.scheme&.downcase) && parsed_url.host.present?
+        @social_media_error = "Enter a valid http:// or https:// URL for #{Band::SOCIAL_MEDIA_PLATFORMS[platform]}"
+        return erb :edit_band
+      end
+    end
+
+    @band.update!(social_media_links: @social_media_links.reject { |_platform, url| url.empty? })
+    @social_media_links = @band.social_media_links
+    @social_media_success = "Social media links updated successfully"
     erb :edit_band
   end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_03_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,13 +22,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000000) do
     t.string "name", null: false
     t.text "notes"
     t.bigint "owner_id"
-    t.datetime "updated_at", null: false
     t.boolean "public_schedule_enabled", default: false
     t.string "slug"
+    t.datetime "updated_at", null: false
     t.string "logo_filename"
     t.boolean "show_band_name", default: true, null: false
     t.boolean "public_songs_enabled", default: false
     t.string "logo_shape", default: "round", null: false
+    t.jsonb "social_media_links", default: {}, null: false
     t.index ["google_calendar_enabled"], name: "index_bands_on_google_calendar_enabled"
     t.index ["google_calendar_id"], name: "index_bands_on_google_calendar_id"
     t.index ["name"], name: "index_bands_on_name", unique: true
@@ -52,14 +53,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000000) do
   create_table "gig_songs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "gig_id", null: false
+    t.boolean "has_transition", default: false
     t.integer "position", null: false
     t.integer "set_number", default: 1, null: false
     t.integer "song_id", null: false
-    t.datetime "updated_at", null: false
-    t.boolean "has_transition", default: false
-    t.string "transition_type"
     t.text "transition_notes"
     t.integer "transition_timing"
+    t.string "transition_type"
+    t.datetime "updated_at", null: false
     t.index ["gig_id", "set_number", "position"], name: "index_gig_songs_on_gig_id_and_set_number_and_position"
     t.index ["gig_id"], name: "index_gig_songs_on_gig_id"
     t.index ["position"], name: "index_gig_songs_on_position"
@@ -70,14 +71,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000000) do
   create_table "gigs", force: :cascade do |t|
     t.integer "band_id", null: false
     t.datetime "created_at", null: false
+    t.datetime "end_time"
     t.string "name", null: false
     t.text "notes"
     t.date "performance_date"
+    t.boolean "private_event", default: false, null: false
+    t.datetime "start_time"
     t.datetime "updated_at", null: false
     t.integer "venue_id"
-    t.datetime "start_time"
-    t.datetime "end_time"
-    t.boolean "private_event", default: false, null: false
     t.index ["band_id", "performance_date"], name: "index_gigs_on_band_id_and_performance_date"
     t.index ["band_id"], name: "index_gigs_on_band_id"
     t.index ["name"], name: "index_gigs_on_name"
@@ -237,9 +238,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000000) do
 
   create_table "songs_bands", id: false, force: :cascade do |t|
     t.bigint "band_id", null: false
-    t.bigint "song_id", null: false
     t.boolean "practice_state", default: false, null: false
     t.datetime "practice_state_updated_at", precision: nil
+    t.bigint "song_id", null: false
     t.integer "votes_count", default: 0, null: false
     t.date "votes_date"
     t.integer "total_votes_count", default: 0, null: false
@@ -269,21 +270,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000000) do
 
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "display_name"
     t.string "email"
     t.integer "failed_attempts_count", default: 0, null: false
     t.datetime "last_failed_attempt_at", precision: nil
     t.integer "last_selected_band_id"
     t.datetime "locked_at", precision: nil
-    t.string "password_digest"
-    t.datetime "updated_at", null: false
-    t.string "username", null: false
+    t.string "oauth_email"
     t.string "oauth_provider"
     t.string "oauth_uid"
-    t.string "oauth_email"
     t.string "oauth_username"
-    t.string "display_name"
+    t.string "password_digest"
     t.boolean "public_profile_enabled", default: false, null: false
     t.string "slug"
+    t.datetime "updated_at", null: false
+    t.string "username", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["last_selected_band_id"], name: "index_users_on_last_selected_band_id"
     t.index ["locked_at"], name: "index_users_on_locked_at"

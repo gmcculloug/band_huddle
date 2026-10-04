@@ -1,4 +1,14 @@
 class Band < ActiveRecord::Base
+  SOCIAL_MEDIA_PLATFORMS = {
+    'facebook' => 'Facebook',
+    'instagram' => 'Instagram',
+    'x' => 'X',
+    'youtube' => 'YouTube',
+    'tiktok' => 'TikTok',
+    'spotify' => 'Spotify',
+    'website' => 'Website'
+  }.freeze
+
   include StripsWhitespace
 
   belongs_to :owner, class_name: 'User', optional: true

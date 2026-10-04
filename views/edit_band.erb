@@ -361,6 +361,42 @@
         </form>
     </div>
 
+    <!-- Social Media Links Section -->
+    <div class="card" style="margin-top: 30px; border: 1px solid #8b5cf6; background: #f5f3ff;">
+        <h3>🔗 Social Media Links</h3>
+        <p style="color: #666; margin-bottom: 20px;">
+            Add links for fans to follow your band. Leave a field blank to hide that icon from your public pages.
+        </p>
+
+        <% if @social_media_error %>
+            <div class="errors" style="margin-bottom: 20px;">
+                <p><%= @social_media_error %></p>
+            </div>
+        <% end %>
+
+        <% if @social_media_success %>
+            <div class="success" style="margin-bottom: 20px;">
+                <p><%= @social_media_success %></p>
+            </div>
+        <% end %>
+
+        <% _social_media_values = @social_media_links || @band.social_media_links || {} %>
+        <form method="POST" action="/bands/<%= @band.id %>/social_media_settings">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+                <% Band::SOCIAL_MEDIA_PLATFORMS.each do |platform, label| %>
+                    <div>
+                        <label for="social_media_<%= platform %>" style="display: block; margin-bottom: 5px; font-weight: bold;"><%= label %></label>
+                        <input type="url" id="social_media_<%= platform %>" name="social_media_links[<%= platform %>]" value="<%= h(_social_media_values[platform].to_s) %>" placeholder="https://" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                    </div>
+                <% end %>
+            </div>
+
+            <div class="actions" style="margin-top: 20px;">
+                <button type="submit" class="btn btn-success">Save Social Media Links</button>
+            </div>
+        </form>
+    </div>
+
     <script>
         const bandLogoPreview = document.getElementById('band-logo-preview');
         if (bandLogoPreview) {

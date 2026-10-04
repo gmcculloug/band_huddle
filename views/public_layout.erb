@@ -45,6 +45,67 @@
             z-index: 1;
         }
 
+        .social-links {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .social-link {
+            display: grid;
+            place-items: center;
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        .social-link:hover,
+        .social-link:focus-visible {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.16);
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        .social-link svg {
+            display: block;
+            width: 19px;
+            height: 19px;
+            fill: currentColor;
+        }
+
+        .social-link .social-instagram-outline {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+        }
+
+        .social-link .social-youtube-outline,
+        .social-link .social-spotify-outline {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+        }
+
+        .social-link .social-spotify-lines {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+        }
+
+        .social-link .social-website-outline {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.7;
+        }
+
         /* Band header (logo / name) */
         .band-header {
             text-align: center;
@@ -552,6 +613,41 @@
 </head>
 <body>
     <div class="container">
+        <% if @band %>
+            <% _social_links = Band::SOCIAL_MEDIA_PLATFORMS.keys.map { |platform| [platform, (@band.social_media_links || {})[platform]] }.select { |_platform, url| url.present? } %>
+            <% unless _social_links.empty? %>
+                <nav class="social-links" aria-label="Social media links">
+                    <% _social_links.each do |platform, url| %>
+                        <a class="social-link" data-platform="<%= platform %>" href="<%= h(url) %>" target="_blank" rel="noopener noreferrer" aria-label="<%= Band::SOCIAL_MEDIA_PLATFORMS[platform] %>" title="<%= Band::SOCIAL_MEDIA_PLATFORMS[platform] %>">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <% case platform %>
+                                <% when 'facebook' %>
+                                    <path d="M13.49 21v-8.21h2.76l.41-3.2h-3.17V7.55c0-.93.26-1.56 1.59-1.56h1.7V3.13A23 23 0 0 0 14.3 3c-2.46 0-4.14 1.5-4.14 4.25v2.34H7.38v3.2h2.78V21h3.33z" />
+                                <% when 'instagram' %>
+                                    <rect class="social-instagram-outline" x="3" y="3" width="18" height="18" rx="5" />
+                                    <circle class="social-instagram-outline" cx="12" cy="12" r="4" />
+                                    <circle cx="18" cy="6.5" r="1.1" />
+                                <% when 'x' %>
+                                    <path d="M18.9 1.2h3.7l-8.1 9.3L24 22.8h-7.4l-5.8-7.6-6.7 7.6H.4l8.7-10L0 1.2h7.6l5.3 7.1 6-7.1zm-1.3 19.5h2L6.5 3.2H4.4l13.2 17.5z" />
+                                <% when 'youtube' %>
+                                    <path class="social-youtube-outline" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.5 9.4.5 9.4.5s7.6 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8z" />
+                                    <path d="m9.6 15.8 6.3-3.8-6.3-3.8z" />
+                                <% when 'tiktok' %>
+                                    <path d="M19.6 6.2a5.9 5.9 0 0 1-3.7-1.3v8.7a6.6 6.6 0 1 1-5.7-6.5v3.6a3.1 3.1 0 1 0 2.2 3V0h3.5c.2 2 1.6 3.7 3.7 4.1v2.1z" />
+                                <% when 'spotify' %>
+                                    <circle class="social-spotify-outline" cx="12" cy="12" r="10" />
+                                    <path class="social-spotify-lines" d="M5.5 9.2c4.6-1.4 9.6-.8 13 1.3M6.3 12.3c3.8-1.1 7.9-.6 10.9 1.2M7 15.2c3-.8 6.2-.4 8.6 1" />
+                                <% when 'website' %>
+                                    <circle class="social-website-outline" cx="12" cy="12" r="9.5" />
+                                    <ellipse class="social-website-outline" cx="12" cy="12" rx="4.2" ry="9.5" />
+                                    <path class="social-website-outline" d="M3 12h18M4.7 7.5h14.6M4.7 16.5h14.6" />
+                                <% end %>
+                            </svg>
+                        </a>
+                    <% end %>
+                </nav>
+            <% end %>
+        <% end %>
         <%= yield %>
         <div class="powered-by">
             Powered by <a href="/">Band Huddle</a>
