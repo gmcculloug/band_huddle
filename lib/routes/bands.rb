@@ -6,6 +6,9 @@ end
 class Routes::Bands < Sinatra::Base
   configure do
     set :views, File.join(File.dirname(__FILE__), '..', '..', 'views')
+    # This modular app has its own Sinatra settings; use the same public
+    # directory mounted by Docker at /app/public/uploads.
+    set :public_folder, File.expand_path('../../public', __dir__)
   end
   
   helpers ApplicationHelpers
