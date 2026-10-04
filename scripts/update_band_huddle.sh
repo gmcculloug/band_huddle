@@ -1,4 +1,7 @@
-git pull
+#!/usr/bin/env bash
+set -euo pipefail
+
+git pull --ff-only
 docker build -t band-huddle .
 
 # Ask user if they want to run the db migration
@@ -10,4 +13,9 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
 fi
 
 docker-compose up --scale band-huddle=2 -d --no-deps band-huddle
-docker image prune
+
+# Ask user if they want to clear container images
+read -r -p "Clear container images? [Y/n] " response
+if [[ -z "$response" || "$response" =~ ^[Yy]$ ]]; then
+    docker image prune --all --force
+fi

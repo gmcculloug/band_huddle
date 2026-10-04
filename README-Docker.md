@@ -49,6 +49,16 @@ docker-compose logs -f band-huddle
 
 ⚠️ **Browser Warning**: You'll see a security warning due to the self-signed certificate. Click "Advanced" then "Proceed to localhost".
 
+## Updating an Existing Deployment
+
+From the application checkout on the deployment host, run:
+
+```bash
+./scripts/update_band_huddle.sh
+```
+
+The script fast-forward pulls the configured branch, builds the application image, runs pending database migrations, and then updates the application containers.
+
 ## Features
 
 ### HTTPS/SSL Support
