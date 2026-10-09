@@ -27,11 +27,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Install dependencies**: `bundle install`
 
 ### Docker Commands
-- **Start with Docker Compose**: `docker-compose up -d` (includes PostgreSQL)
-- **Stop Docker services**: `docker-compose down`
-- **View logs**: `docker-compose logs -f band-huddle`
-- **Run migrations in Docker**: `docker-compose exec band-huddle bundle exec rake db:migrate`
-- **Access PostgreSQL in Docker**: `docker-compose exec postgres psql -U band-huddle -d band-huddle_production`
+- **Start with Docker Compose**: `docker compose up -d` (includes PostgreSQL)
+- **Stop Docker services**: `docker compose down`
+- **View logs**: `docker compose logs -f band-huddle`
+- **Run migrations in Docker**: `docker compose exec band-huddle bundle exec rake db:migrate`
+- **Access PostgreSQL in Docker**: `docker compose exec postgres psql -U band-huddle -d band-huddle_production`
 
 ## Architecture Overview
 

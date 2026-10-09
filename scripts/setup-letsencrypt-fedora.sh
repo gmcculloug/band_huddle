@@ -94,7 +94,7 @@ check_prerequisites() {
         exit 1
     fi
 
-    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+    if ! docker compose version &> /dev/null; then
         error "Docker Compose is not installed. Please install Docker Compose first."
         exit 1
     fi
@@ -304,7 +304,7 @@ start_temp_nginx() {
     log "Starting nginx with temporary configuration for certificate generation..."
 
     # Stop existing nginx if running
-    docker-compose down nginx 2>/dev/null || true
+    docker compose down nginx 2>/dev/null || true
 
     # Backup current nginx config
     cp "$NGINX_CONF_DIR/nginx.conf" "$NGINX_CONF_DIR/nginx.conf.backup" 2>/dev/null || true
@@ -313,7 +313,7 @@ start_temp_nginx() {
     cp "$NGINX_CONF_DIR/nginx-temp.conf" "$NGINX_CONF_DIR/nginx.conf"
 
     # Start nginx with temporary config
-    docker-compose up -d nginx
+    docker compose up -d nginx
 
     sleep 10
     log "Temporary nginx configuration started"
@@ -324,7 +324,7 @@ stop_temp_nginx() {
     log "Restoring production nginx configuration..."
 
     # Stop nginx
-    docker-compose down nginx 2>/dev/null || true
+    docker compose down nginx 2>/dev/null || true
 
     # Restore production config
     if [ -f "$NGINX_CONF_DIR/nginx.conf.backup" ]; then
@@ -412,7 +412,7 @@ restart_services() {
     log "Restarting services..."
 
     # Start all services including nginx with production config
-    docker-compose up -d
+    docker compose up -d
 
     log "Services restarted"
 }
@@ -523,7 +523,7 @@ main() {
         create_renewal_script
 
         log "SSL setup completed successfully!"
-        info "You can now start your application with: docker-compose up -d"
+        info "You can now start your application with: docker compose up -d"
         info "Your site will be available at:"
         for domain in "${DOMAINS[@]}"; do
             info "  - https://$domain"

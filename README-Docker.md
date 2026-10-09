@@ -37,10 +37,10 @@ DATABASE_PASSWORD=your_db_password
 
 ```bash
 # Build and start the application
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f band-huddle
+docker compose logs -f band-huddle
 ```
 
 ### 3. Access the Application
@@ -99,7 +99,7 @@ Place your certificates in `./custom-ssl/`:
 3. Verify mounted certificate files have correct permissions
 
 ### Environment Variables
-- Use `docker-compose logs band-huddle` to see startup messages
+- Use `docker compose logs band-huddle` to see startup messages
 - Verify environment variables are set correctly in `.env`
 - Check that `BAND_HUDDLE_ACCT_CREATION_SECRET` is configured
 

@@ -8,11 +8,11 @@ docker build -t band-huddle .
 read -r -p "Run db migration before starting? [y/N] " response
 if [[ "$response" =~ ^[Yy]$ ]]; then
     echo "Running db migration..."
-    docker-compose run --rm db-migrate
+    docker compose run --rm db-migrate
     echo ""
 fi
 
-docker-compose up --scale band-huddle=2 -d --no-deps band-huddle
+docker compose up --scale band-huddle=2 -d --no-deps band-huddle
 
 # Ask user if they want to clear container images
 read -r -p "Clear container images? [Y/n] " response
