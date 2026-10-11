@@ -128,4 +128,58 @@ RSpec.describe Band, type: :model do
       expect(band.reload.name).to eq('Renamed Band')
     end
   end
+
+  describe 'tip link' do
+    describe 'validations' do
+      it 'allows a blank tip text' do
+        band = build(:band, tip_text: '')
+        expect(band).to be_valid
+      end
+
+      it 'allows tip text up to 80 characters' do
+        band = build(:band, tip_text: 'a' * 80)
+        expect(band).to be_valid
+      end
+
+      it 'rejects tip text longer than 80 characters' do
+        band = build(:band, tip_text: 'a' * 81)
+        expect(band).not_to be_valid
+        expect(band.errors[:tip_text]).to include('is too long (maximum is 80 characters)')
+      end
+
+      it 'allows a valid tip url' do
+        band = build(:band, tip_url: 'https://example.com/tip')
+        expect(band).to be_valid
+      end
+
+      it 'rejects a tip url that is not http(s)' do
+        band = build(:band, tip_url: 'javascript:alert(1)')
+        expect(band).not_to be_valid
+        expect(band.errors[:tip_url]).to include('must be a valid http:// or https:// URL')
+      end
+
+      it 'rejects a malformed tip url' do
+        band = build(:band, tip_url: 'not a url')
+        expect(band).not_to be_valid
+        expect(band.errors[:tip_url]).to include('must be a valid http:// or https:// URL')
+      end
+    end
+
+    describe '#tip_link_text' do
+      it 'returns the default text when tip text is not set' do
+        band = create(:band)
+        expect(band.tip_link_text).to eq('💗 Tip the Band')
+      end
+
+      it 'returns the default text when tip text is blank' do
+        band = create(:band, tip_text: '')
+        expect(band.tip_link_text).to eq('💗 Tip the Band')
+      end
+
+      it 'returns the custom text when set' do
+        band = create(:band, tip_text: 'Buy us a beer 🍺')
+        expect(band.tip_link_text).to eq('Buy us a beer 🍺')
+      end
+    end
+  end
 end 

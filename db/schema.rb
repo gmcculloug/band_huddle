@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_10_202200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -30,6 +30,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_130000) do
     t.boolean "public_songs_enabled", default: false
     t.string "logo_shape", default: "round", null: false
     t.jsonb "social_media_links", default: {}, null: false
+    t.string "tip_url"
+    t.string "tip_text", limit: 80
     t.index ["google_calendar_enabled"], name: "index_bands_on_google_calendar_enabled"
     t.index ["google_calendar_id"], name: "index_bands_on_google_calendar_id"
     t.index ["name"], name: "index_bands_on_name", unique: true

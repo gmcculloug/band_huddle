@@ -106,6 +106,30 @@
             stroke-width: 1.7;
         }
 
+        .tip-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 36px;
+            padding: 0 12px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 650;
+            text-decoration: none;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        .tip-link:hover,
+        .tip-link:focus-visible {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.18);
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
         /* Band header (logo / name) */
         .band-header {
             text-align: center;
@@ -615,8 +639,13 @@
     <div class="container">
         <% if @band %>
             <% _social_links = Band::SOCIAL_MEDIA_PLATFORMS.keys.map { |platform| [platform, (@band.social_media_links || {})[platform]] }.select { |_platform, url| url.present? } %>
-            <% unless _social_links.empty? %>
-                <nav class="social-links" aria-label="Social media links">
+            <% _tip_url = @band.tip_url.presence %>
+            <% _tip_link_text = @band.tip_link_text %>
+            <% unless _social_links.empty? && _tip_url.nil? %>
+                <nav class="social-links" aria-label="Band links">
+                    <% if _tip_url %>
+                        <a class="tip-link" href="<%= h(_tip_url) %>" target="_blank" rel="noopener noreferrer"><%= h(_tip_link_text) %></a>
+                    <% end %>
                     <% _social_links.each do |platform, url| %>
                         <a class="social-link" data-platform="<%= platform %>" href="<%= h(url) %>" target="_blank" rel="noopener noreferrer" aria-label="<%= Band::SOCIAL_MEDIA_PLATFORMS[platform] %>" title="<%= Band::SOCIAL_MEDIA_PLATFORMS[platform] %>">
                             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

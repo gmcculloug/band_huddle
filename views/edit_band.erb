@@ -34,6 +34,18 @@
                 <small style="color: #666;">Optional notes about the band, members, style, etc.</small>
             </div>
 
+            <div style="margin-bottom: 20px;">
+                <label for="band_tip_url" style="display: block; margin-bottom: 5px; font-weight: bold;">Tip URL</label>
+                <input type="url" id="band_tip_url" name="band[tip_url]" value="<%= h(@band.tip_url) %>" placeholder="https://" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
+                <small style="color: #666;">Optional payment or tipping link. When set, a “Tip the Band” link appears on your public schedule and song pages.</small>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="band_tip_text" style="display: block; margin-bottom: 5px; font-weight: bold;">Tip Link Text</label>
+                <input type="text" id="band_tip_text" name="band[tip_text]" value="<%= h(@band.tip_text) %>" maxlength="80" placeholder="💗 Tip the Band" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
+                <small style="color: #666;">Optional custom text for the tip link (max 80 characters). Leave blank to use the default “💗 Tip the Band”.</small>
+            </div>
+
             <%= erb :_form_actions, locals: { submit_text: 'Update Band', cancel_url: "/bands/#{@band.id}" } %>
         </form>
     </div>

@@ -1,3 +1,5 @@
+require 'uri'
+
 class Band < ActiveRecord::Base
   SOCIAL_MEDIA_PLATFORMS = {
     'facebook' => 'Facebook',
@@ -8,6 +10,9 @@ class Band < ActiveRecord::Base
     'spotify' => 'Spotify',
     'website' => 'Website'
   }.freeze
+
+  # Text shown for the tip link on public pages when no custom text is set
+  DEFAULT_TIP_TEXT = '💗 Tip the Band'
 
   include StripsWhitespace
 
@@ -28,6 +33,8 @@ class Band < ActiveRecord::Base
   validates :slug, uniqueness: true, allow_nil: true
   validates :logo_shape, inclusion: { in: %w[round square] }
   validates :google_calendar_id, presence: true, if: :google_calendar_enabled?
+  validates :tip_text, length: { maximum: 80 }
+  validate :tip_url_must_be_http_url
 
   before_save :generate_slug, if: -> { new_record? || slug.blank? }
 
@@ -41,6 +48,12 @@ class Band < ActiveRecord::Base
 
   def public_songs_enabled?
     read_attribute(:public_songs_enabled) == true
+  end
+
+  # Text displayed on the public tip link; falls back to the default
+  # when no custom text is set.
+  def tip_link_text
+    tip_text.presence || DEFAULT_TIP_TEXT
   end
 
   def owner?
@@ -85,6 +98,17 @@ class Band < ActiveRecord::Base
   end
 
   private
+
+  def tip_url_must_be_http_url
+    return if tip_url.blank?
+
+    parsed_url = URI.parse(tip_url)
+    return if %w[http https].include?(parsed_url.scheme&.downcase) && parsed_url.host.present?
+
+    errors.add(:tip_url, 'must be a valid http:// or https:// URL')
+  rescue URI::InvalidURIError
+    errors.add(:tip_url, 'must be a valid http:// or https:// URL')
+  end
 
   # Generates slug on create or when slug is blank (e.g. backfilled records).
   # Slug is intentionally left unchanged on updates to preserve public URLs.

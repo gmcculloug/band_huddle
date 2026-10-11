@@ -129,6 +129,42 @@ RSpec.describe 'Public Schedule Routes', type: :request do
       end
     end
 
+    context 'tip link' do
+      it 'does not render a tip link when no tip url is set' do
+        get "/band/#{band.slug}"
+
+        expect(last_response.body).not_to include('class="tip-link"')
+        expect(last_response.body).not_to include('💗 Tip the Band')
+      end
+
+      it 'renders the default tip text when a tip url is set without custom text' do
+        band.update!(tip_url: 'https://example.com/tip')
+
+        get "/band/#{band.slug}"
+
+        expect(last_response.body).to include('💗 Tip the Band')
+        expect(last_response.body).to include('https://example.com/tip')
+      end
+
+      it 'renders the custom tip text when set' do
+        band.update!(tip_url: 'https://example.com/tip', tip_text: 'Buy us a beer 🍺')
+
+        get "/band/#{band.slug}"
+
+        expect(last_response.body).to include('Buy us a beer 🍺')
+        expect(last_response.body).not_to include('💗 Tip the Band')
+      end
+
+      it 'escapes custom tip text' do
+        band.update!(tip_url: 'https://example.com/tip', tip_text: '<script>alert(1)</script>')
+
+        get "/band/#{band.slug}"
+
+        expect(last_response.body).not_to include('<script>alert(1)</script>')
+        expect(last_response.body).to include('&lt;script&gt;')
+      end
+    end
+
     context 'when public schedule is disabled' do
       it 'returns 200 with not found page (not a 404 for security)' do
         get "/band/#{disabled_band.slug}"
