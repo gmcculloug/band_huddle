@@ -6,13 +6,18 @@
 - **ORM**: ActiveRecord (via `sinatra-activerecord` gem, not Rails)
 - **Framework**: Sinatra (not Rails — this distinction affects migration tooling)
 
-## Custom Migration System
+## Migration Tooling
 
-This project uses a **custom migration runner** defined in `Rakefile`, not the standard Rails migration commands. Key differences:
+Migration rake tasks come from two places, wired together in `Rakefile`:
+
+- `sinatra-activerecord` (required at the top of `Rakefile`) supplies ActiveRecord's built-in migrator, which powers `db:migrate` and regenerates `db/schema.rb` after migrating
+- `Rakefile` defines custom `db:create_migration`, `db:rollback`, `db:status`, and `db:reset_tables` tasks (the gem's colliding `db:create_migration` / `db:rollback` are cleared first — Rake would otherwise append to them and run both)
+
+Commands:
 
 - Create migrations: `rake db:create_migration NAME=add_foo_to_bars`
-- Run migrations: `rake db:migrate` (custom implementation that manually loads and runs each file)
-- Rollback: `rake db:rollback` (rolls back only the last migration)
+- Run migrations: `rake db:migrate` (ActiveRecord's built-in migrator; also regenerates `db/schema.rb`)
+- Rollback: `rake db:rollback` (rolls back only the last migration, using the inverse of `change`)
 - Status: `rake db:status`
 - Reset: `rake db:reset_tables` (drops all tables via raw SQL, then migrates)
 

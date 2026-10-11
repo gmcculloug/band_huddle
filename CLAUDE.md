@@ -55,9 +55,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Environment variables: `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`
 
 ### Custom Migration System
-This project implements a custom migration system (not Rails migrations):
+This project uses ActiveRecord migrations with custom rake tooling (not Rails):
 - Migrations in `db/migrate/` with timestamp_name.rb format
-- Custom rake tasks handle migration state tracking
+- `db:migrate` uses ActiveRecord's built-in migrator (via `sinatra-activerecord`) and regenerates `db/schema.rb`
+- `db:create_migration`, `db:rollback`, and `db:status` are custom tasks in `Rakefile`
 - Always use `rake db:create_migration` to generate new migrations
 - Migration classes must inherit from `ActiveRecord::Migration[7.0]`
 

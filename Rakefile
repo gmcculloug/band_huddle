@@ -15,6 +15,18 @@ rescue LoadError
   puts "RSpec not available. Install with: bundle install"
 end
 
+# sinatra-activerecord (via active_record/railties/databases.rake) defines its
+# own db:create_migration and db:rollback tasks. Rake does not replace a task
+# when it is redeclared — it appends a second action, so both versions would
+# run (creating duplicate migration files and rolling back two migrations per
+# invocation). Clear the gem-defined tasks so only the versions below run.
+# db:migrate is intentionally NOT redeclared here: ActiveRecord's built-in
+# migrator (loaded via the require above) runs migrations and auto-dumps
+# db/schema.rb, which keeps the schema dump in sync after every migrate.
+%w[create_migration rollback].each do |task_name|
+  Rake::Task["db:#{task_name}"].clear if Rake::Task.task_defined?("db:#{task_name}")
+end
+
 namespace :db do
   desc "Create a new migration"
   task :create_migration => :environment do
@@ -46,49 +58,6 @@ namespace :db do
     puts "Created migration: #{filepath}"
   end
 
-  desc "Run all pending migrations"
-  task :migrate => :environment do
-    # Create schema_migrations table if it doesn't exist
-    unless ActiveRecord::Base.connection.table_exists?('schema_migrations')
-      ActiveRecord::Base.connection.create_table :schema_migrations do |t|
-        t.string :version, null: false
-      end
-      ActiveRecord::Base.connection.add_index :schema_migrations, :version, unique: true
-    end
-    
-    # Get all migration files
-    migration_files = Dir.glob(File.join("db", "migrate", "*.rb")).sort
-    applied_versions = ActiveRecord::Base.connection.select_values("SELECT version FROM schema_migrations")
-    
-    pending_migrations = migration_files.select do |file|
-      version = File.basename(file).split('_').first
-      !applied_versions.include?(version)
-    end
-    
-    if pending_migrations.empty?
-      puts "No pending migrations."
-      next
-    end
-    
-    pending_migrations.each do |file|
-      version = File.basename(file).split('_').first
-      migration_name = File.basename(file, '.rb').split('_', 2).last.camelize
-      
-      puts "Running migration #{version}: #{migration_name}"
-      
-      # Load and run the migration
-      load file
-      migration_class = Object.const_get(migration_name)
-      migration = migration_class.new
-      migration.up
-      
-      # Record the migration as applied
-      ActiveRecord::Base.connection.execute("INSERT INTO schema_migrations (version) VALUES ('#{version}')")
-    end
-    
-    puts "Migrations completed successfully!"
-  end
-
   desc "Rollback the last migration"
   task :rollback => :environment do
     # Get the last applied migration
@@ -111,11 +80,14 @@ namespace :db do
     
     puts "Rolling back migration #{last_version}: #{migration_name}"
     
-    # Load and run the migration down
+    # Load and run the migration down.
+    # Use migrate(:down) rather than down: Migration#down is a no-op for
+    # migrations that only define `change`; migrate(:down) runs the recorded
+    # inverse via revert.
     load migration_file
     migration_class = Object.const_get(migration_name)
     migration = migration_class.new
-    migration.down
+    migration.migrate(:down)
     
     # Remove the migration record
     ActiveRecord::Base.connection.execute("DELETE FROM schema_migrations WHERE version = '#{last_version}'")

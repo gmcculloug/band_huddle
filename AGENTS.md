@@ -18,7 +18,7 @@ Detailed, repo-specific rules live in these guideline files:
 **This is a Sinatra app, not Rails.** This distinction affects almost everything:
 
 - No `rails generate`, no `rails console`, no `rails routes` — use `ruby app.rb` to start the server
-- Migrations are created with `rake db:create_migration NAME=foo` and run with `rake db:migrate` (custom runner in `Rakefile`, not Rails)
+- Migrations are created with `rake db:create_migration NAME=foo` and run with `rake db:migrate` (AR's built-in migrator does the work and regenerates `db/schema.rb`; create/rollback/status are custom tasks in `Rakefile`)
 - There is no `rails_helper` in specs — require `spec_helper` instead
 - Models inherit from `ActiveRecord::Base` directly; they are defined in `app.rb` (small models) or `lib/models/` (larger ones)
 - Routes are split across `lib/routes/` files and mounted in `app.rb` via `use`
