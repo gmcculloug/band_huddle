@@ -8,8 +8,6 @@ services:
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${DATABASE_PORT}:${DATABASE_PORT}"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
@@ -19,8 +17,6 @@ services:
       start_period: 30s
   valkey:
     image: valkey/valkey:8.0-alpine
-    ports:
-      - "${VALKEY_PORT:-6379}:6379"  # Expose for development debugging
     volumes:
       - valkey_data:/data
     restart: unless-stopped
@@ -95,7 +91,6 @@ services:
       start_period: 10s
     command: >
       sh -c "
-        echo 'BAND_HUDDLE_ACCT_CREATION_SECRET: ${BAND_HUDDLE_ACCT_CREATION_SECRET}' &&
         echo 'Starting Band Huddle application (HTTP - SSL handled by nginx)...' &&
         ruby app.rb
       "
