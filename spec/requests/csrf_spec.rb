@@ -26,4 +26,16 @@ RSpec.describe 'CSRF protection', type: :request do
       expect(JSON.parse(last_response.body)).to include('error' => 'Invalid username or password')
     end
   end
+
+  describe 'POST /band/:slug/songs/:id/upvote' do
+    it 'allows unauthenticated public voting without an authenticity token' do
+      band = create(:band, public_songs_enabled: true)
+      song = create(:song)
+      band.songs << song
+
+      post_without_csrf "/band/#{band.slug}/songs/#{song.id}/upvote"
+
+      expect(last_response.status).to eq(302)
+    end
+  end
 end

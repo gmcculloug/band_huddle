@@ -4,6 +4,7 @@ module BandHuddle
   class BrowserCsrfProtection
     SAFE_REQUEST_METHODS = %w[GET HEAD OPTIONS TRACE].freeze
     CSRF_EXEMPT_PATH_PREFIXES = %w[/api/auth/ /api/mobile/].freeze
+    PUBLIC_VOTE_PATH = %r{\A/band/[^/]+/songs/\d+/(?:upvote|downvote)\z}.freeze
 
     def initialize(app)
       @app = app
@@ -24,7 +25,8 @@ module BandHuddle
 
     def csrf_exempt?(env)
       path = env['PATH_INFO'].to_s
-      CSRF_EXEMPT_PATH_PREFIXES.any? { |prefix| path.start_with?(prefix) }
+      CSRF_EXEMPT_PATH_PREFIXES.any? { |prefix| path.start_with?(prefix) } ||
+        path.match?(PUBLIC_VOTE_PATH)
     end
   end
 end
