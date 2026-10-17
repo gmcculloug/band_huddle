@@ -5,11 +5,11 @@ RSpec.describe SongVote do
   let(:song) { create(:song) }
   let(:device_id) { 'device-1' }
 
-  def create_vote(device_id: 'device-1', song: self.song, band: self.band, created_at: Time.current)
+  def create_vote(device_id: 'device-1', song: self.song, band: self.band, ip_address: '1.2.3.4', created_at: Time.current)
     SongVote.create!(
       song: song,
       band: band,
-      ip_address: '1.2.3.4',
+      ip_address: ip_address,
       device_id: device_id,
       created_at: created_at
     )
@@ -54,6 +54,18 @@ RSpec.describe SongVote do
       expect(SongVote.rate_limited?('device-2', song, band)).to be false
     end
 
+    it 'rate-limits a forged device when the IP already voted for the song/band' do
+      create_vote
+
+      expect(SongVote.rate_limited_for_device_or_ip?('forged-device', '1.2.3.4', song, band)).to be true
+    end
+
+    it 'does not rate-limit an unrelated device and IP' do
+      create_vote
+
+      expect(SongVote.rate_limited_for_device_or_ip?('device-2', '5.6.7.8', song, band)).to be false
+    end
+
     it 'does not rate-limit a different song for the same device' do
       other_song = create(:song)
       create_vote
@@ -66,6 +78,18 @@ RSpec.describe SongVote do
       create_vote
 
       expect(SongVote.rate_limited?(device_id, song, other_band)).to be false
+    end
+  end
+
+  describe '.band_rate_limited?' do
+    it 'rate-limits the band after a device or IP reaches the aggregate vote limit' do
+      create_vote(song: create(:song))
+
+      expect(SongVote.band_rate_limited?(device_id, '1.2.3.4', band, max: 2)).to be false
+
+      create_vote(song: create(:song))
+
+      expect(SongVote.band_rate_limited?(device_id, '1.2.3.4', band, max: 2)).to be true
     end
   end
 

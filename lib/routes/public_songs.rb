@@ -73,7 +73,8 @@ class Routes::PublicSongs < Sinatra::Base
     if song.nil?
       message = 'Song not found'
       vote_response(nil, band, false, "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component(message)}", message)
-    elsif SongVote.rate_limited?(device_id, song, band)
+    elsif SongVote.rate_limited_for_device_or_ip?(device_id, request.ip, song, band) ||
+          SongVote.band_rate_limited?(device_id, request.ip, band)
       message = "You've already voted for this song recently"
       vote_response(song, band, false, "/band/#{band.slug}/songs?by=#{view_by}&error=#{URI.encode_www_form_component(message)}", message)
     else
@@ -120,7 +121,9 @@ class Routes::PublicSongs < Sinatra::Base
       redirect "/band/#{band.slug}/songs?success=#{URI.encode_www_form_component('Thanks for your recommendation!')}"
     end
 
-    if SongRecommendation.rate_limited?(device_id) || SongRecommendation.pending_limit_reached?(band)
+    if SongRecommendation.rate_limited_for_device_or_ip?(device_id, request.ip) ||
+       SongRecommendation.band_rate_limited?(band) ||
+       SongRecommendation.pending_limit_reached?(band)
       redirect "/band/#{band.slug}/songs?error=#{URI.encode_www_form_component('Unable to accept recommendations right now. Please try again later.')}"
     end
 

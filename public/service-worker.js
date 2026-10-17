@@ -126,6 +126,12 @@ async function clearPrivateGigData(gigId) {
   }
 
   privateGigResponses.clear();
+  await clearAllPersistentCaches();
+}
+
+async function clearAllPersistentCaches() {
+  const cacheNames = await caches.keys();
+  await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
 }
 
 self.addEventListener('message', (event) => {

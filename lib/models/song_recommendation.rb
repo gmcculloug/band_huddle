@@ -17,6 +17,18 @@ class SongRecommendation < ActiveRecord::Base
     where(device_id: device_id, created_at: window.ago..).count >= max
   end
 
+  def self.rate_limited_for_device_or_ip?(device_id, ip_address, window: 1.hour, max: 5)
+    scope = where(created_at: window.ago..)
+    device_scope = scope.where(device_id: device_id)
+    return device_scope.count >= max if ip_address.blank?
+
+    device_scope.or(scope.where(ip_address: ip_address)).count >= max
+  end
+
+  def self.band_rate_limited?(band, window: 1.hour, max: 100)
+    where(band: band, created_at: window.ago..).count >= max
+  end
+
   def self.pending_limit_reached?(band, max: 200)
     where(band: band, status: 'pending').count >= max
   end
