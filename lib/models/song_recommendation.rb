@@ -20,6 +20,7 @@ class SongRecommendation < ActiveRecord::Base
   def self.rate_limited_for_device_or_ip?(device_id, ip_address, window: 1.hour, max: 5)
     scope = where(created_at: window.ago..)
     device_scope = scope.where(device_id: device_id)
+    return device_scope.count >= max if BandHuddle::DeviceId.first_party?(device_id)
     return device_scope.count >= max if ip_address.blank?
 
     device_scope.or(scope.where(ip_address: ip_address)).count >= max

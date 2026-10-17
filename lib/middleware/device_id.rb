@@ -8,6 +8,10 @@ module BandHuddle
     COOKIE_MAX_AGE = 365 * 24 * 60 * 60
     UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
 
+    def self.first_party?(device_id)
+      device_id.to_s.match?(UUID_PATTERN)
+    end
+
     def initialize(app)
       @app = app
     end

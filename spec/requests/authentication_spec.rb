@@ -32,6 +32,7 @@ RSpec.describe 'Authentication', type: :request do
       original_stdout = $stdout
       captured_stdout = StringIO.new
       $stdout = captured_stdout
+      user.update!(password: password)
 
       begin
         post '/api/auth/login', username: 'testuser', password: password

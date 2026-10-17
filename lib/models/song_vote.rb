@@ -12,6 +12,7 @@ class SongVote < ActiveRecord::Base
   def self.rate_limited_for_device_or_ip?(device_id, ip_address, song, band, window: 1.day)
     scope = where(song: song, band: band, created_at: window.ago..)
     device_scope = scope.where(device_id: device_id)
+    return device_scope.exists? if BandHuddle::DeviceId.first_party?(device_id)
     return device_scope.exists? if ip_address.blank?
 
     device_scope.or(scope.where(ip_address: ip_address)).exists?
