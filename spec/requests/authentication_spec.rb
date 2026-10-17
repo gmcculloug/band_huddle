@@ -93,14 +93,31 @@ RSpec.describe 'Authentication', type: :request do
     end
   end
 
-  describe 'GET /logout' do
+  describe 'POST /logout' do
     it 'logs out the user' do
+      clear_cookies
       user = User.create!(username: 'testuser', password: 'password123', email: 'test@example.com')
       post '/login', username: 'testuser', password: 'password123'
       
-      get '/logout'
+      post '/logout'
       expect(last_response.status).to eq(302)
       expect(last_response.headers['Location']).to include('/login')
+    end
+
+    it 'requires authentication' do
+      post '/logout'
+
+      expect(last_response.status).to eq(302)
+      expect(last_response.headers['Location']).to include('/login')
+    end
+
+    it 'requires an authenticity token' do
+      user = User.create!(username: 'testuser', password: 'password123', email: 'test@example.com')
+      post '/login', username: 'testuser', password: 'password123'
+
+      post_without_csrf '/logout'
+
+      expect(last_response.status).to eq(403)
     end
   end
 
@@ -258,7 +275,7 @@ RSpec.describe 'Authentication', type: :request do
         expect(last_response.body).to include('Password changed successfully!')
         
         # Verify new password works
-        post '/logout'
+        clear_cookies
         post '/login', username: 'testuser', password: 'newpassword123'
         expect(last_response.status).to eq(302)
         expect(last_response.headers['Location']).to include('/')

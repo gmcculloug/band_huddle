@@ -59,7 +59,9 @@ class Routes::Authentication < Sinatra::Base
     end
   end
 
-  get '/logout' do
+  post '/logout' do
+    require_login
+
     # Save the current band selection before clearing session
     if logged_in? && current_band
       current_user.update(last_selected_band_id: current_band.id)
