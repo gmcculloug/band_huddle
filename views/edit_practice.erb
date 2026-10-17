@@ -135,7 +135,7 @@
     </div>
 </form>
 
-<script>
+<script nonce="<%= csp_nonce %>">
 // Calculate days difference reliably, avoiding timezone issues
 function calculateDaysDifference(startDate, endDate) {
     // Use UTC time to ensure consistent calculation across timezones

@@ -34,6 +34,10 @@ module ApplicationHelpers
     %(<input type="hidden" name="authenticity_token" value="#{h(csrf_token)}">)
   end
 
+  def csp_nonce
+    request.env[BandHuddle::SecurityHeaders::NONCE_ENV_KEY]
+  end
+
   # Authentication helpers
   def current_user
     # Return cached user if already loaded

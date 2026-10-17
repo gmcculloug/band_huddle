@@ -93,7 +93,7 @@
 </form>
 
 
-<script>
+<script nonce="<%= csp_nonce %>">
 document.addEventListener('DOMContentLoaded', function() {
     const venueSelect = document.getElementById('gig_venue_id');
     const gigNameInput = document.getElementById('gig_name');

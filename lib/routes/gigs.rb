@@ -360,6 +360,7 @@ class Routes::Gigs < Sinatra::Base
     # Add additional includes for gig mode
     @gig = Gig.includes(:venue, gig_songs: :song).find(@gig.id)
 
+    headers['X-Band-Huddle-Offline-Capable'] = 'true'
     erb :gig_mode, layout: false
   end
 

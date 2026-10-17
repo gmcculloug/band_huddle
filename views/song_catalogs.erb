@@ -25,7 +25,7 @@
     } %>
 </div>
 
-<script>
+<script nonce="<%= csp_nonce %>">
 // Initialize search functionality using shared utilities
 DOMUtils.ready(function() {
     SearchUtils.initializeSearch('search-input', 500);

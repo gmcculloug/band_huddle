@@ -106,7 +106,7 @@
     <%= erb :_form_actions, locals: { submit_text: 'Save Song Catalog', cancel_url: '/song_catalogs' } %>
 </form>
 
-<script>
+<script nonce="<%= csp_nonce %>">
 document.addEventListener('DOMContentLoaded', function() {
     const keyInput = document.getElementById('song_catalog_key');
     const originalKeyInput = document.getElementById('song_catalog_original_key');

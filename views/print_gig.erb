@@ -390,7 +390,7 @@
             }
         }
     </style>
-    <script>
+    <script nonce="<%= csp_nonce %>">
         function changeFontSize(pointSize) {
             document.documentElement.style.setProperty('--base-font-size', pointSize + 'pt');
         }

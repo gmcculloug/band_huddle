@@ -228,7 +228,7 @@
     </div>
 
     <!-- Scripts -->
-    <script>
+    <script nonce="<%= csp_nonce %>">
         // Pass server data to JavaScript
         window.GIG_DATA = {
             id: <%= @gig.id %>,
@@ -238,6 +238,6 @@
             notes: <%= @gig.notes.to_json %>
         };
     </script>
-    <script src="/gig-mode.js"></script>
+    <script nonce="<%= csp_nonce %>" src="/gig-mode.js"></script>
 </body>
 </html>

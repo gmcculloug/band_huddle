@@ -70,7 +70,7 @@
     <% end %>
 </div>
 
-<script>
+<script nonce="<%= csp_nonce %>">
 // Confirmation function for password-based users
 function confirmPasswordUserDeletion() {
     const password = document.getElementById('password').value;

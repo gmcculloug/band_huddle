@@ -1,321 +1,171 @@
-// Band Huddle Gig Mode Service Worker
-// Provides offline caching for gig mode functionality
+// Band Huddle service worker
+// Static assets use Cache Storage; authenticated gig responses use memory only.
 
-const CACHE_NAME = 'band-huddle-gig-mode-v1';
-const GIG_DATA_CACHE = 'band-huddle-gig-data-v1';
+const CACHE_NAME = 'band-huddle-gig-mode-v2';
+const LEGACY_CACHE_NAMES = ['band-huddle-gig-mode-v1', 'band-huddle-gig-data-v1'];
+const OFFLINE_CAPABLE_HEADER = 'X-Band-Huddle-Offline-Capable';
+const STATIC_ASSETS = ['/gig-mode.css', '/gig-mode.js', '/favicon.ico'];
+const privateGigResponses = new Map();
 
-// Static assets to always cache
-const STATIC_ASSETS = [
-  '/gig-mode.css',
-  '/gig-mode.js',
-  '/favicon.ico'
-];
-
-// Install event - cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .then(() => {
-        return self.skipWaiting();
-      })
-      .catch((error) => {
-        console.error('[Service Worker] Failed to cache static assets:', error);
-      })
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
+      .catch((error) => console.error('[Service Worker] Static asset cache failed:', error))
   );
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME && cacheName !== GIG_DATA_CACHE) {
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-      .then(() => {
-        return self.clients.claim();
-      })
+      .then((cacheNames) => Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName !== CACHE_NAME && !LEGACY_CACHE_NAMES.includes(cacheName))
+          .map((cacheName) => caches.delete(cacheName))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch event - handle requests with caching strategy
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Handle gig mode API requests
-  if (url.pathname.includes('/api/gigs/') && url.pathname.includes('/gig_mode')) {
-    event.respondWith(handleGigDataRequest(event.request));
+  if (url.pathname === '/logout' || url.pathname === '/select_band') {
+    event.waitUntil(clearPrivateGigData());
+  }
+
+  if (isGigDataRequest(url) || isGigModePageRequest(url)) {
+    event.respondWith(handlePrivateGigRequest(event.request));
     return;
   }
 
-  // Handle gig mode page requests
-  if (url.pathname.includes('/gigs/') && url.pathname.includes('/gig_mode')) {
-    event.respondWith(handleGigModePageRequest(event.request));
-    return;
-  }
-
-  // Handle static assets (CSS, JS, etc.)
   if (isStaticAsset(url.pathname)) {
     event.respondWith(handleStaticAssetRequest(event.request));
     return;
   }
 
-  // For all other requests, just fetch normally
   event.respondWith(fetch(event.request));
 });
 
-// Handle gig data API requests with cache-first strategy
-async function handleGigDataRequest(request) {
-  const cache = await caches.open(GIG_DATA_CACHE);
-
+async function handlePrivateGigRequest(request) {
   try {
-    // Try cache first
-    const cachedResponse = await cache.match(request);
-    if (cachedResponse) {
-      // Fetch fresh data in background and update cache
-      fetchAndCacheGigData(request, cache);
-
-      return cachedResponse;
-    }
-
-    // No cache, fetch from network
     const networkResponse = await fetch(request);
-
-    if (networkResponse.ok) {
-      // Cache the response
-      await cache.put(request, networkResponse.clone());
-    }
-
+    storePrivateGigResponse(request, networkResponse);
     return networkResponse;
-
   } catch (error) {
-    console.error('[Service Worker] Failed to fetch gig data:', error);
-
-    // Try to serve from cache as fallback
-    const cachedResponse = await cache.match(request);
+    const cachedResponse = privateGigResponses.get(request.url);
     if (cachedResponse) {
-      return cachedResponse;
+      return cachedResponse.clone();
     }
 
-    // Return error response if no cache available
-    return new Response(
-      JSON.stringify({ error: 'Offline and no cached data available' }),
-      {
-        status: 503,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    return offlineResponse(request);
   }
 }
 
-// Handle gig mode page requests
-async function handleGigModePageRequest(request) {
-  try {
-    // Try network first for fresh content
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      // Cache the page
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, networkResponse.clone());
-      return networkResponse;
-    }
-  } catch (error) {
-    // Network failed, try cache
+function storePrivateGigResponse(request, response) {
+  if (response.ok && response.headers.get(OFFLINE_CAPABLE_HEADER) === 'true') {
+    privateGigResponses.set(request.url, response.clone());
   }
+}
 
-  // Fall back to cache
+async function handleStaticAssetRequest(request) {
   const cache = await caches.open(CACHE_NAME);
   const cachedResponse = await cache.match(request);
-
   if (cachedResponse) {
     return cachedResponse;
   }
 
-  // No cache available
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok && !isNoStore(networkResponse)) {
+      await cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    console.error('[Service Worker] Static asset fetch failed:', error);
+    return new Response('Asset not available offline', { status: 503 });
+  }
+}
+
+function isNoStore(response) {
+  return (response.headers.get('Cache-Control') || '').toLowerCase().includes('no-store');
+}
+
+function isGigDataRequest(url) {
+  return url.pathname.includes('/api/gigs/') && url.pathname.endsWith('/gig_mode');
+}
+
+function isGigModePageRequest(url) {
+  return url.pathname.includes('/gigs/') && url.pathname.endsWith('/gig_mode');
+}
+
+function isStaticAsset(pathname) {
+  const staticExtensions = ['.css', '.js', '.ico', '.png', '.jpg', '.svg'];
+  const gigModeAssets = ['/gig-mode.css', '/gig-mode.js'];
+  return staticExtensions.some((extension) => pathname.endsWith(extension)) ||
+    gigModeAssets.some((asset) => pathname.includes(asset));
+}
+
+function offlineResponse(request) {
+  if (isGigDataRequest(new URL(request.url))) {
+    return Response.json({ error: 'Offline and no cached data available' }, { status: 503 });
+  }
+
   return new Response('Offline and no cached page available', {
     status: 503,
     headers: { 'Content-Type': 'text/html' }
   });
 }
 
-// Handle static assets with cache-first strategy
-async function handleStaticAssetRequest(request) {
-  const cache = await caches.open(CACHE_NAME);
-
-  // Try cache first
-  const cachedResponse = await cache.match(request);
-  if (cachedResponse) {
-    return cachedResponse;
+async function clearPrivateGigData(gigId) {
+  if (gigId) {
+    privateGigResponses.delete(`/api/gigs/${gigId}/gig_mode`);
+    privateGigResponses.delete(`/gigs/${gigId}/gig_mode`);
+    return;
   }
 
-  // Fetch from network and cache
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      await cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  } catch (error) {
-    console.error('[Service Worker] Failed to fetch static asset:', error);
-    return new Response('Asset not available offline', { status: 503 });
-  }
+  privateGigResponses.clear();
 }
 
-// Background fetch and cache update for gig data
-async function fetchAndCacheGigData(request, cache) {
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      await cache.put(request, networkResponse.clone());
-
-      // Notify clients about the update
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({
-            type: 'GIG_DATA_UPDATED',
-            url: request.url
-          });
-        });
-      });
-    }
-  } catch (error) {
-    // Background update failed silently
-  }
-}
-
-// Check if a URL is a static asset we want to cache
-function isStaticAsset(pathname) {
-  const staticExtensions = ['.css', '.js', '.ico', '.png', '.jpg', '.svg'];
-  const gigModeAssets = ['/gig-mode.css', '/gig-mode.js'];
-
-  return staticExtensions.some(ext => pathname.endsWith(ext)) ||
-         gigModeAssets.some(asset => pathname.includes(asset));
-}
-
-// Message handler for communication with the main thread
 self.addEventListener('message', (event) => {
   const { type, gigId } = event.data;
 
   if (type === 'CACHE_GIG_DATA') {
-    cacheGigData(gigId);
+    event.waitUntil(cacheGigData(gigId));
   } else if (type === 'CLEAR_GIG_CACHE') {
-    clearGigCache(gigId);
+    event.waitUntil(clearPrivateGigData(gigId));
   } else if (type === 'GET_CACHE_STATUS') {
-    getCacheStatus(gigId).then(status => {
-      event.ports[0].postMessage(status);
-    });
+    getCacheStatus(gigId).then((status) => event.ports[0].postMessage(status));
   }
 });
 
-// Cache specific gig data
 async function cacheGigData(gigId) {
+  const requests = [
+    new Request(`/api/gigs/${gigId}/gig_mode`),
+    new Request(`/gigs/${gigId}/gig_mode`)
+  ];
+
   try {
-    const gigDataUrl = `/api/gigs/${gigId}/gig_mode`;
-    const gigPageUrl = `/gigs/${gigId}/gig_mode`;
+    await Promise.all(requests.map(async (request) => {
+      const response = await fetch(request);
+      storePrivateGigResponse(request, response);
+    }));
 
-    const [dataCache, pageCache] = await Promise.all([
-      caches.open(GIG_DATA_CACHE),
-      caches.open(CACHE_NAME)
-    ]);
-
-    // Fetch and cache gig data
-    const dataResponse = await fetch(gigDataUrl);
-    if (dataResponse.ok) {
-      await dataCache.put(gigDataUrl, dataResponse.clone());
-    }
-
-    // Fetch and cache gig page
-    const pageResponse = await fetch(gigPageUrl);
-    if (pageResponse.ok) {
-      await pageCache.put(gigPageUrl, pageResponse.clone());
-    }
-
-    // Notify clients
-    self.clients.matchAll().then(clients => {
-      clients.forEach(client => {
-        client.postMessage({
-          type: 'GIG_CACHED',
-          gigId: gigId
-        });
-      });
-    });
-
+    notifyClients({ type: 'GIG_CACHED', gigId });
   } catch (error) {
-    console.error('[Service Worker] Failed to cache gig data:', error);
-
-    // Notify clients of error
-    self.clients.matchAll().then(clients => {
-      clients.forEach(client => {
-        client.postMessage({
-          type: 'GIG_CACHE_ERROR',
-          gigId: gigId,
-          error: error.message
-        });
-      });
-    });
+    notifyClients({ type: 'GIG_CACHE_ERROR', gigId, error: error.message });
   }
 }
 
-// Clear cache for specific gig
-async function clearGigCache(gigId) {
-  try {
-    const [dataCache, pageCache] = await Promise.all([
-      caches.open(GIG_DATA_CACHE),
-      caches.open(CACHE_NAME)
-    ]);
-
-    const gigDataUrl = `/api/gigs/${gigId}/gig_mode`;
-    const gigPageUrl = `/gigs/${gigId}/gig_mode`;
-
-    await Promise.all([
-      dataCache.delete(gigDataUrl),
-      pageCache.delete(gigPageUrl)
-    ]);
-
-  } catch (error) {
-    console.error('[Service Worker] Failed to clear gig cache:', error);
-  }
+function getCacheStatus(gigId) {
+  return Promise.resolve({
+    gigId,
+    dataCached: privateGigResponses.has(`/api/gigs/${gigId}/gig_mode`),
+    pageCached: privateGigResponses.has(`/gigs/${gigId}/gig_mode`)
+  });
 }
 
-// Get cache status for specific gig
-async function getCacheStatus(gigId) {
-  try {
-    const [dataCache, pageCache] = await Promise.all([
-      caches.open(GIG_DATA_CACHE),
-      caches.open(CACHE_NAME)
-    ]);
-
-    const gigDataUrl = `/api/gigs/${gigId}/gig_mode`;
-    const gigPageUrl = `/gigs/${gigId}/gig_mode`;
-
-    const [dataExists, pageExists] = await Promise.all([
-      dataCache.match(gigDataUrl).then(response => !!response),
-      pageCache.match(gigPageUrl).then(response => !!response)
-    ]);
-
-    return {
-      gigId: gigId,
-      dataCached: dataExists,
-      pageCached: pageExists,
-      fullyCached: dataExists && pageExists
-    };
-
-  } catch (error) {
-    console.error('[Service Worker] Failed to get cache status:', error);
-    return {
-      gigId: gigId,
-      dataCached: false,
-      pageCached: false,
-      fullyCached: false,
-      error: error.message
-    };
-  }
+function notifyClients(message) {
+  self.clients.matchAll().then((clients) => clients.forEach((client) => client.postMessage(message)));
 }

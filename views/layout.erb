@@ -14,9 +14,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
     <!-- Flatpickr CSS and JS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
+    <link rel="stylesheet" href="/vendor/flatpickr/flatpickr.css">
+    <script nonce="<%= csp_nonce %>" src="/vendor/flatpickr/flatpickr.js"></script>
+    <script nonce="<%= csp_nonce %>">
         (function() {
             const originalFetch = window.fetch;
             const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -1681,7 +1681,7 @@
     </style>
 
     <!-- Band Huddle Shared Utilities -->
-    <script src="/band-huddle-utils.js"></script>
+    <script nonce="<%= csp_nonce %>" src="/band-huddle-utils.js"></script>
 </head>
 <body>
     <!-- Skip Navigation Link -->
@@ -1806,7 +1806,7 @@
         </main>
     </div>
     
-    <script>
+    <script nonce="<%= csp_nonce %>">
         function toggleMobileMenu() {
             const nav = document.getElementById('mobile-nav');
             const toggle = document.querySelector('.mobile-menu-toggle');
@@ -1849,7 +1849,7 @@
             }
         });
     </script>
-    <script>
+    <script nonce="<%= csp_nonce %>">
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.local-time').forEach(function(el) {
                 var d = new Date(el.dataset.utc);

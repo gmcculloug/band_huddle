@@ -168,7 +168,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="<%= csp_nonce %>">
 // Show/hide public profile fields based on checkbox state
 (function() {
     const checkbox = document.getElementById('public_profile_enabled_checkbox');
@@ -376,7 +376,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="<%= csp_nonce %>">
 // Password confirmation validation
 document.getElementById('confirm_password').addEventListener('input', function() {
     const newPassword = document.getElementById('new_password').value;

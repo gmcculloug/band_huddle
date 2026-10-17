@@ -437,7 +437,7 @@
 }
 </style>
 
-<script>
+<script nonce="<%= csp_nonce %>">
 function toggleBlackoutDate(dateStr) {
     // Check if this date already has a blackout for current user
     const calendarDay = document.querySelector(`[data-date="${dateStr}"]`);

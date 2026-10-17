@@ -147,7 +147,7 @@
     <% end %>
 </div>
 
-<script>
+<script nonce="<%= csp_nonce %>">
 document.addEventListener('DOMContentLoaded', function() {
     const keyInput = document.getElementById('song_catalog_key');
     const originalKeyInput = document.getElementById('song_catalog_original_key');

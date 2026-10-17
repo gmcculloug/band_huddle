@@ -262,6 +262,7 @@ class Routes::Api < Sinatra::Base
   get '/api/gigs/:id/gig_mode' do
     require_login
     content_type :json
+    headers['X-Band-Huddle-Offline-Capable'] = 'true'
 
     begin
       @gig = filter_by_current_band(Gig).includes(:venue, gig_songs: :song).find(params[:id])

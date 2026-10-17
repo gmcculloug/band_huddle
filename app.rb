@@ -45,6 +45,7 @@ require_relative 'lib/services/error_handler'
 # Load helpers
 require_relative 'lib/helpers/icon_helpers'
 require_relative 'lib/helpers/application_helpers'
+require_relative 'lib/middleware/security_headers'
 
 # Load route modules
 require_relative 'lib/routes/authentication'
@@ -108,6 +109,7 @@ end
 
 use BandHuddle::DeviceId
 use BandHuddle::BrowserCsrfProtection
+use BandHuddle::SecurityHeaders
 
 set :public_folder, File.dirname(__FILE__) + '/public'
 

@@ -68,7 +68,7 @@
     </div>
 <% end %>
 
-<script>
+<script nonce="<%= csp_nonce %>">
 function selectAll() {
     const checkboxes = document.querySelectorAll('input[name="venue_ids[]"]');
     const selectAllCheckbox = document.getElementById('select-all');

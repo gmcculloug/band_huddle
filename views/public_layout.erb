@@ -682,7 +682,7 @@
             Powered by <a href="/">Band Huddle</a>
         </div>
     </div>
-    <script>
+    <script nonce="<%= csp_nonce %>">
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.local-time').forEach(function(el) {
                 var d = new Date(el.dataset.utc);

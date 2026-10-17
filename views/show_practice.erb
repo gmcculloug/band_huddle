@@ -387,7 +387,7 @@
 <% end %>
 
 
-<script>
+<script nonce="<%= csp_nonce %>">
 // Function to handle user selection with radio buttons
 function handleUserSelection(radioButton) {
     const selectedUserId = radioButton.value;
