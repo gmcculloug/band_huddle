@@ -57,7 +57,6 @@ class OauthService
     # Exchange authorization code for access token
     def exchange_code_for_token(provider, code, redirect_uri)
       puts "[OAUTH DEBUG] Starting token exchange for #{provider}"
-      puts "[OAUTH DEBUG] Code: #{code[0..10]}..." if code
       puts "[OAUTH DEBUG] Redirect URI: #{redirect_uri}"
 
       config = PROVIDERS[provider.to_s]
@@ -127,7 +126,6 @@ class OauthService
       if response.is_a?(Net::HTTPSuccess)
         puts "[OAUTH DEBUG] Token exchange successful"
         token_data = JSON.parse(response.body)
-        puts "[OAUTH DEBUG] Token data keys: #{token_data.keys}"
 
         # For Apple, extract user info from id_token if available
         if provider.to_s == 'apple' && token_data['id_token']
@@ -137,8 +135,8 @@ class OauthService
 
         token_data
       else
-        puts "[OAUTH DEBUG] ERROR: Token exchange failed - #{response.code}: #{response.body}"
-        Rails.logger.error("OAuth token exchange failed for #{provider}: #{response.code} #{response.body}") if defined?(Rails)
+        puts "[OAUTH DEBUG] ERROR: Token exchange failed - #{response.code}"
+        Rails.logger.error("OAuth token exchange failed for #{provider}: #{response.code}") if defined?(Rails)
         nil
       end
     rescue JSON::ParserError => e
@@ -183,7 +181,6 @@ class OauthService
       end
 
       puts "[OAUTH DEBUG] Fetching user info from: #{config[:user_info_url]}"
-      puts "[OAUTH DEBUG] Access token: #{access_token_or_data ? "#{access_token_or_data[0..10]}..." : 'MISSING'}"
 
       uri = URI(config[:user_info_url])
       http = Net::HTTP.new(uri.host, uri.port)
@@ -474,8 +471,6 @@ class OauthService
         oauth_email: user_info['email'],
         oauth_username: user_info['username']
       }
-
-      puts "[OAUTH DEBUG] Creating user with params: #{user_params.inspect}"
 
       user = User.create!(user_params)
       puts "[OAUTH DEBUG] New user created successfully: #{user.username} (ID: #{user.id})"

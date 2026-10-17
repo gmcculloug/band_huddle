@@ -79,7 +79,6 @@ class Routes::Authentication < Sinatra::Base
   post '/api/auth/login' do
     content_type :json
 
-    puts "params: #{params}"
     user = User.where('LOWER(username) = ?', params[:username].downcase).first
 
     if user && user.authenticate(params[:password])
@@ -94,8 +93,7 @@ class Routes::Authentication < Sinatra::Base
             id: user.id,
             username: user.username,
             display_name: user.display_name_or_fallback,
-            email: user.email,
-            timezone: user.timezone
+            email: user.email
           },
           bands: user.bands.map { |band|
             {

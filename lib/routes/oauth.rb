@@ -156,10 +156,7 @@ class Routes::OAuth < Sinatra::Base
   get '/auth/:provider/callback' do
     puts "\n[OAUTH DEBUG] ===== OAUTH CALLBACK STARTED ====="
     puts "[OAUTH DEBUG] Provider: #{params[:provider]}"
-    puts "[OAUTH DEBUG] Code: #{params[:code] ? "#{params[:code][0..15]}..." : 'MISSING'}"
-    puts "[OAUTH DEBUG] State: #{params[:state]}"
     puts "[OAUTH DEBUG] Error: #{params[:error]}"
-    puts "[OAUTH DEBUG] Session OAuth state: #{session[:oauth_state]}"
 
     provider = params[:provider]
     code = params[:code]

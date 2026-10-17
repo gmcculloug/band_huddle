@@ -1,4 +1,5 @@
 require_relative '../spec_helper'
+require 'stringio'
 
 RSpec.describe 'Authentication', type: :request do
   describe 'GET /login' do
@@ -24,6 +25,23 @@ RSpec.describe 'Authentication', type: :request do
       post '/login', username: 'testuser', password: 'wrongpassword'
       expect(last_response).to be_ok
       expect(last_response.body).to include('Invalid username or password')
+    end
+
+    it 'does not log login credentials' do
+      password = SecureRandom.hex(12)
+      original_stdout = $stdout
+      captured_stdout = StringIO.new
+      $stdout = captured_stdout
+
+      begin
+        post '/api/auth/login', username: 'testuser', password: password
+      ensure
+        $stdout = original_stdout
+      end
+
+      expect(last_response.status).to eq(200)
+      expect(captured_stdout.string).not_to include(password)
+      expect(captured_stdout.string).not_to include('params:')
     end
   end
 
