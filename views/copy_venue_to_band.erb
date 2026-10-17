@@ -23,6 +23,7 @@
 
     <% if @target_bands.any? %>
         <form method="POST" action="/venues/<%= @venue.id %>/copy">
+            <%= csrf_tag %>
             <div style="margin-bottom: 20px;">
                 <label for="target_band_id" style="display: block; font-weight: 600; margin-bottom: 8px;">
                     Select Band to Copy To:
@@ -64,4 +65,3 @@
             </div>
         </div>
     <% end %>
-</div>

@@ -13,6 +13,7 @@
 <% end %>
 
 <form method="POST" action="/practices/<%= @practice.id %>" class="card">
+    <%= csrf_tag %>
     <input type="hidden" name="_method" value="PUT">
 
     <div class="form-group">

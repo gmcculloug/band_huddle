@@ -15,6 +15,7 @@
 <%= erb :_errors %>
 
 <form method="POST" action="/songs/<%= @song.id %>" class="card" id="edit-song-form">
+    <%= csrf_tag %>
     <input type="hidden" name="_method" value="PUT">
     
     <div class="form-group">
@@ -155,4 +156,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-</script> 
+</script>

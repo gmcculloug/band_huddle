@@ -24,6 +24,7 @@
 
     <div class="card">
         <form method="POST" action="/bands">
+            <%= csrf_tag %>
             <div style="margin-bottom: 20px;">
                 <label for="band_name" style="display: block; margin-bottom: 5px; font-weight: bold;">Band Name *</label>
                 <input type="text" id="band_name" name="band[name]" value="<%= params.dig(:band, :name) %>" required autofocus style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
@@ -43,4 +44,4 @@
             </div>
         </form>
     </div>
-</div> 
+</div>

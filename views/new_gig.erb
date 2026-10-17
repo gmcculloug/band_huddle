@@ -3,6 +3,7 @@
 <%= erb :_errors %>
 
 <form id="gig-form" method="POST" action="/gigs" class="card" aria-labelledby="new-gig-heading" novalidate>
+    <%= csrf_tag %>
     <div class="form-group">
         <label for="gig_venue_id">Venue</label>
         <select id="gig_venue_id" name="venue_id" autofocus>
@@ -320,4 +321,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
- 

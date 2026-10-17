@@ -106,6 +106,7 @@ DOMUtils.ready(function() {
 
                         <% if current_band && !@show_archived && !@existing_catalog_ids.include?(song_catalog.id) %>
                             <form method="post" action="/songs/copy_single_from_catalog" style="display: inline;">
+                                <%= csrf_tag %>
                                 <input type="hidden" name="song_catalog_id" value="<%= song_catalog.id %>">
                                 <input type="hidden" name="search" value="<%= @search %>">
                                 <button type="submit" class="btn btn-success" style="padding: 6px 12px; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; gap: 4px;"
@@ -130,6 +131,7 @@ DOMUtils.ready(function() {
 
                         <% if @show_archived && song_catalog.archived? %>
                             <form method="POST" action="/song_catalogs/<%= song_catalog.id %>/unarchive" style="display: inline;" onsubmit="return confirm('Are you sure you want to unarchive this song?');">
+                                <%= csrf_tag %>
                                 <button type="submit" class="btn btn-success btn-small" style="font-size: 0.8rem;">📂 Unarchive</button>
                             </form>
                         <% end %>

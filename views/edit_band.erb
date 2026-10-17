@@ -21,6 +21,7 @@
 
     <div class="card" style="margin-bottom: 30px;">
         <form method="POST" action="/bands/<%= @band.id %>">
+            <%= csrf_tag %>
             <input type="hidden" name="_method" value="PUT">
 
             <div style="margin-bottom: 20px;">
@@ -95,12 +96,14 @@
                                 <% if @band.users.count > 1 %>
                                     <% if user == current_user %>
                                         <form method="POST" action="/bands/<%= @band.id %>/remove_user" style="display: inline;">
+                                            <%= csrf_tag %>
                                             <input type="hidden" name="user_id" value="<%= user.id %>">
                                             <button type="submit" class="btn btn-danger" style="font-size: 0.8rem; padding: 3px 8px;" onclick="return confirm('Leave this band? You will no longer have access to its songs and set lists.')">Leave Band</button>
                                         </form>
                                     <% elsif @band.owned_by?(current_user) %>
                                         <% unless is_owner && @band.owners.count <= 1 %>
                                             <form method="POST" action="/bands/<%= @band.id %>/remove_user" style="display: inline;">
+                                                <%= csrf_tag %>
                                                 <input type="hidden" name="user_id" value="<%= user.id %>">
                                                 <button type="submit" class="btn btn-danger" style="font-size: 0.8rem; padding: 3px 8px;" onclick="return confirm('Remove <%= user.display_name_or_fallback %> from this band?')">Remove</button>
                                             </form>
@@ -108,12 +111,14 @@
                                         
                                         <% if is_owner && @band.owners.count > 1 %>
                                             <form method="POST" action="/bands/<%= @band.id %>/change_membership" style="display: inline;">
+                                                <%= csrf_tag %>
                                                 <input type="hidden" name="user_id" value="<%= user.id %>">
                                                 <input type="hidden" name="role" value="member">
                                                 <button type="submit" class="btn btn-secondary" style="font-size: 0.8rem; padding: 3px 8px;" onclick="return confirm('Change <%= user.display_name_or_fallback %> to Member?')">Make Member</button>
                                             </form>
                                         <% elsif !is_owner %>
                                             <form method="POST" action="/bands/<%= @band.id %>/change_membership" style="display: inline;">
+                                                <%= csrf_tag %>
                                                 <input type="hidden" name="user_id" value="<%= user.id %>">
                                                 <input type="hidden" name="role" value="owner">
                                                 <button type="submit" class="btn btn-warning" style="font-size: 0.8rem; padding: 3px 8px;" onclick="return confirm('Make <%= user.display_name_or_fallback %> an Owner?')">Make Owner</button>
@@ -132,6 +137,7 @@
             <% if @band.owned_by?(current_user) %>
                 <h4>Add New Member</h4>
                 <form method="POST" action="/bands/<%= @band.id %>/add_user" style="display: flex; gap: 10px; align-items: end;">
+                    <%= csrf_tag %>
                     <div style="flex: 1;">
                         <label for="username" style="display: block; margin-bottom: 5px; font-weight: bold;">Username</label>
                         <input type="text" id="username" name="username" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;" placeholder="Enter username to add">
@@ -163,6 +169,7 @@
         <% end %>
 
         <form method="POST" action="/bands/<%= @band.id %>/google_calendar_settings">
+            <%= csrf_tag %>
             <div style="margin-bottom: 20px;">
                 <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
                     <input type="checkbox" 
@@ -236,6 +243,7 @@
         <% end %>
 
         <form method="POST" action="/bands/<%= @band.id %>/public_schedule_settings" enctype="multipart/form-data">
+            <%= csrf_tag %>
             <div style="margin-bottom: 20px;">
                 <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                     <input type="checkbox" 
@@ -350,6 +358,7 @@
         <% end %>
 
         <form method="POST" action="/bands/<%= @band.id %>/public_songs_settings">
+            <%= csrf_tag %>
             <div style="margin-bottom: 10px;">
                 <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                     <input type="checkbox"
@@ -394,6 +403,7 @@
 
         <% _social_media_values = @social_media_links || @band.social_media_links || {} %>
         <form method="POST" action="/bands/<%= @band.id %>/social_media_settings">
+            <%= csrf_tag %>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
                 <% Band::SOCIAL_MEDIA_PLATFORMS.each do |platform, label| %>
                     <div>
@@ -555,6 +565,7 @@
                 <li>Google Calendar sync data</li>
             </ul>
             <form method="POST" action="/bands/<%= @band.id %>" style="margin: 0;">
+                <%= csrf_tag %>
                 <input type="hidden" name="_method" value="DELETE">
                 <button type="submit"
                         class="btn btn-danger"

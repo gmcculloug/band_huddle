@@ -34,6 +34,7 @@
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;" onclick="event.stopPropagation();">
                         <form method="POST" action="/songs/<%= song.id %>/unarchive" style="display: inline;" onsubmit="return confirm('Are you sure you want to unarchive this song?');">
+                            <%= csrf_tag %>
                             <button type="submit" class="btn btn-success btn-small" style="font-size: 0.8rem;">📂 Unarchive</button>
                         </form>
                     </div>
@@ -46,4 +47,3 @@
         <h3>No archived songs</h3>
         <p>You haven't archived any songs yet.</p>
     </div>
-<% end %>

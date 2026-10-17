@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="format-detection" content="telephone=no">
+    <meta name="csrf-token" content="<%= h(csrf_token) %>">
     <title>Band Huddle - Song Management</title>
 
     <!-- Favicon -->
@@ -15,6 +16,22 @@
     <!-- Flatpickr CSS and JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        (function() {
+            const originalFetch = window.fetch;
+            const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+            window.fetch = function(input, init) {
+                const method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+                if (unsafeMethods.has(method)) {
+                    init = init || {};
+                    init.headers = new Headers(init.headers || {});
+                    init.headers.set('X-CSRF-Token', document.querySelector('meta[name="csrf-token"]').content);
+                }
+                return originalFetch.call(this, input, init);
+            };
+        })();
+    </script>
     <style>
         * {
             margin: 0;
@@ -1683,6 +1700,7 @@
                         <div class="band-section">
                                                     <% if user_bands.count > 1 %>
                             <form method="post" action="/select_band" style="display: inline;">
+                                <%= csrf_tag %>
                                 <input type="hidden" name="current_path" value="<%= request.path %>">
                                 <select name="band_id" onchange="this.form.submit()" class="band-selector">
                                     <% user_bands.each do |band| %>

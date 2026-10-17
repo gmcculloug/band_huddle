@@ -17,6 +17,7 @@
         <div class="card">
             <h3>Profile Information</h3>
             <form method="POST" action="/profile">
+                <%= csrf_tag %>
                 <input type="hidden" name="_method" value="PUT">
 
                 <div class="form-group">
@@ -47,6 +48,7 @@
         <div class="card" style="margin-top: 30px;">
             <h3>Change Password</h3>
             <form method="POST" action="/profile/change_password">
+                <%= csrf_tag %>
                 <div class="form-group">
                     <label for="current_password">Current Password:</label>
                     <input type="password" id="current_password" name="current_password" required>
@@ -113,6 +115,7 @@
         <div class="card" style="margin-top: 30px;">
             <h3>🌐 Public Profile</h3>
             <form method="POST" action="/profile/public_profile_settings">
+                <%= csrf_tag %>
                 <div class="form-group">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                         <input type="checkbox" id="public_profile_enabled_checkbox" name="public_profile_enabled" value="1"
@@ -289,6 +292,7 @@
 
                 <% if current_user.can_unlink_oauth? %>
                     <form method="POST" action="/auth/<%= current_user.oauth_provider %>/disconnect" onsubmit="return confirm('Are you sure you want to disconnect your <%= current_user.oauth_provider.capitalize %> account? You will need to use your password to log in.')">
+                        <%= csrf_tag %>
                         <button type="submit" class="btn btn-outline" style="font-size: 0.85rem; color: #dc2626; border-color: #dc2626;">
                             Disconnect <%= current_user.oauth_provider.capitalize %>
                         </button>

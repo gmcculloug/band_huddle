@@ -13,6 +13,7 @@
 <% end %>
 
 <form method="POST" action="/practices" class="card">
+    <%= csrf_tag %>
     <div class="form-group">
         <label for="practice_title">Practice Title (Optional)</label>
         <input type="text" id="practice_title" name="title" placeholder="e.g., Weekly Practice, Pre-Gig Rehearsal" value="<%= @practice&.title %>">

@@ -7,6 +7,7 @@ require 'bcrypt'
 require 'rack/method_override'
 require 'connection_pool'
 require_relative 'lib/middleware/device_id'
+require_relative 'lib/middleware/browser_csrf_protection'
 
 # Only require Redis gems when Valkey sessions are enabled
 if ENV['VALKEY_ENABLED'] == 'true'
@@ -105,6 +106,7 @@ else
 end
 
 use BandHuddle::DeviceId
+use BandHuddle::BrowserCsrfProtection
 
 set :public_folder, File.dirname(__FILE__) + '/public'
 

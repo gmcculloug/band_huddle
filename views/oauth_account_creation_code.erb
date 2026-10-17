@@ -15,6 +15,7 @@
 </p>
 
 <form method="POST" action="/auth/verify_account_creation_code">
+    <%= csrf_tag %>
     <div class="form-group">
         <label for="account_creation_code">Account Creation Code:</label>
         <input type="password"

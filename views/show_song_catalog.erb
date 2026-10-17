@@ -81,6 +81,7 @@
                                 </div>
                             <% else %>
                                 <form method="POST" action="/bands/<%= band.id %>/copy_songs" style="margin-bottom: 8px;">
+                                    <%= csrf_tag %>
                                     <input type="hidden" name="song_catalog_ids[]" value="<%= @song_catalog.id %>">
                                     <input type="hidden" name="from_song_catalog" value="<%= @song_catalog.id %>">
                                     <button type="submit" class="btn" style="width: 100%; text-align: left;">

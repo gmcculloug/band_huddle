@@ -3,6 +3,7 @@
 <%= erb :_errors %>
 
 <form method="POST" action="/songs" class="card">
+    <%= csrf_tag %>
     <div class="form-group">
         <label for="song_title">Title *</label>
         <input type="text" id="song_title" name="song[title]" required autofocus>
@@ -122,4 +123,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-</script> 
+</script>

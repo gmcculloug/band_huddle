@@ -15,6 +15,7 @@
 </div>
 
 <form method="POST" action="/song_catalogs/<%= @song_catalog.id %>" class="card" id="edit-song-catalog-form">
+    <%= csrf_tag %>
     <input type="hidden" name="_method" value="PUT">
     
     <div class="form-group">
@@ -120,6 +121,7 @@
     <h3>Song Management</h3>
     <% if @song_catalog.archived? %>
         <form method="POST" action="/song_catalogs/<%= @song_catalog.id %>/unarchive" style="margin-top: 15px;">
+            <%= csrf_tag %>
             <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to unarchive this song catalog entry? It will be available again in the catalog.')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 6px;">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -132,6 +134,7 @@
         </form>
     <% else %>
         <form method="POST" action="/song_catalogs/<%= @song_catalog.id %>/archive" style="margin-top: 15px;">
+            <%= csrf_tag %>
             <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to archive this song catalog entry? It will be hidden from the main catalog but can be restored later.')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 6px;">
                     <polyline points="21,8 21,21 3,21 3,8"></polyline>

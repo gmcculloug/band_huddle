@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <% if @song_catalogs.any? %>
     <form method="POST" action="/bands/<%= @band.id %>/copy_songs">
+        <%= csrf_tag %>
         <div style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">
@@ -159,4 +160,3 @@ document.addEventListener('DOMContentLoaded', function() {
             <% end %>
         </div>
     </div>
-<% end %>

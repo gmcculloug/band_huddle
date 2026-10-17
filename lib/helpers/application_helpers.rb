@@ -26,6 +26,14 @@ module ApplicationHelpers
     request.env[BandHuddle::DeviceId::ENV_KEY]
   end
 
+  def csrf_token
+    Rack::Protection::AuthenticityToken.token(session)
+  end
+
+  def csrf_tag
+    %(<input type="hidden" name="authenticity_token" value="#{h(csrf_token)}">)
+  end
+
   # Authentication helpers
   def current_user
     # Return cached user if already loaded

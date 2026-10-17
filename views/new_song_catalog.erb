@@ -9,6 +9,7 @@
 </div>
 
 <form method="POST" action="/song_catalogs" class="card">
+    <%= csrf_tag %>
     <div class="form-group">
         <label for="song_catalog_title">Title *</label>
         <input type="text" id="song_catalog_title" name="song_catalog[title]" required autofocus>

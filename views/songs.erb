@@ -27,6 +27,7 @@
         </a>
         <form method="post" action="/songs/reset_votes" style="display: inline;"
               onsubmit="return confirm('Reset all public song vote counts for this band? Recent vote records will also be cleared so voting can start fresh. This cannot be undone.');">
+            <%= csrf_tag %>
             <button type="submit" class="btn btn-danger">Reset Song Votes</button>
         </form>
     </div>
@@ -437,6 +438,7 @@ function togglePracticeState(songId, button) {
               </div>
             </div>
             <form method="post" action="/songs/copy_single_from_catalog" style="display: inline;" onclick="event.stopPropagation();">
+                <%= csrf_tag %>
               <input type="hidden" name="song_catalog_id" value="<%= catalog_song.id %>">
               <input type="hidden" name="search" value="<%= @search %>">
               <button type="submit" class="btn btn-success" style="padding: 4px 8px; font-size: 0.75rem; min-height: 28px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center;"

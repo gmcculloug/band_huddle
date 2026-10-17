@@ -68,6 +68,7 @@
 
 <!-- Traditional Login Form -->
 <form method="post" action="/login" aria-labelledby="login-heading" novalidate>
+    <%= csrf_tag %>
   <h2 id="login-heading" class="sr-only">Login Form</h2>
 
   <div class="form-group">

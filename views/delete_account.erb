@@ -28,6 +28,7 @@
         </p>
 
         <form method="POST" action="/account/delete" onsubmit="return confirmPasswordUserDeletion()">
+            <%= csrf_tag %>
             <div class="form-group">
                 <label for="password">Password:</label>
                 <input type="password" id="password" name="password" required>
@@ -58,6 +59,7 @@
         </div>
 
         <form method="POST" action="/account/delete" onsubmit="return confirmOAuthUserDeletion()">
+            <%= csrf_tag %>
             <div class="actions">
                 <button type="submit" class="btn btn-danger" style="background: #dc2626;">
                     🗑️ Permanently Delete My Account
@@ -106,5 +108,3 @@ function confirmOAuthUserDeletion() {
     );
 
     return finalConfirm;
-}
-</script>

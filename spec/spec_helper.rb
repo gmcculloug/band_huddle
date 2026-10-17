@@ -11,6 +11,40 @@ require_relative '../app'
 # Load factories
 require_relative 'factories'
 
+module CsrfTestHelpers
+  def csrf_test_token
+    return @csrf_test_token if @csrf_test_token
+
+    get '/login'
+    @csrf_test_token = last_response.body[/name="authenticity_token" value="([^"]+)"/, 1]
+    set_cookie_headers = Array(last_response.headers['Set-Cookie'])
+    @csrf_session_cookie = set_cookie_headers.find { |cookie| cookie.start_with?('rack.session=') }&.split(';').first
+    raise 'Could not read CSRF token from login form' unless @csrf_test_token
+
+    @csrf_test_token
+  end
+
+  def clear_cookies
+    @csrf_test_token = nil
+    @csrf_session_cookie = nil
+    current_session.clear_cookies
+  end
+
+  def post_without_csrf(uri, params = {}, env = {}, &block)
+    current_session.custom_request('POST', uri, params, env, &block)
+  end
+
+  %w[post put patch delete].each do |method_name|
+    define_method(method_name) do |uri, params = {}, env = {}, &block|
+      env = env.merge('HTTP_X_CSRF_TOKEN' => csrf_test_token)
+      if env['HTTP_COOKIE'] && @csrf_session_cookie
+        env['HTTP_COOKIE'] = "#{env['HTTP_COOKIE']}; #{@csrf_session_cookie}"
+      end
+      current_session.custom_request(method_name.upcase, uri, params, env, &block)
+    end
+  end
+end
+
 # Time helpers for consistent date testing
 module TimeHelpers
   # Freeze time to a consistent date for reliable testing
@@ -41,6 +75,7 @@ end
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
+  config.include CsrfTestHelpers
   config.include Capybara::DSL
   config.include FactoryBot::Syntax::Methods
 
@@ -143,4 +178,4 @@ class String
   def camelize
     self.split('_').map(&:capitalize).join
   end
-end 
+end

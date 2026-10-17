@@ -3,6 +3,7 @@
 <%= erb :_errors %>
 
 <form method="post" action="/signup" aria-labelledby="signup-heading" novalidate>
+    <%= csrf_tag %>
   <div class="form-group">
     <label for="username">Username:</label>
     <input type="text"

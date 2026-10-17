@@ -39,6 +39,7 @@
         </ul>
     <% end %>
     <form method="post" action="/band/<%= @band.slug %>/songs/recommend">
+        <%= csrf_tag %>
         <input type="text" name="website" value="" style="position:absolute;left:-9999px;top:-9999px" tabindex="-1" autocomplete="off">
         <label>Song Title <input type="text" name="title" maxlength="200" required></label>
         <label>Artist <input type="text" name="artist" maxlength="200" required></label>
@@ -59,6 +60,7 @@
                         _action = _voted ? 'downvote' : 'upvote'
                     %>
                     <form method="post" action="/band/<%= @band.slug %>/songs/<%= song.id %>/<%= _action %>?by=<%= @view_by %>" class="vote-form">
+                        <%= csrf_tag %>
                         <button type="submit" class="vote-btn" aria-label="<%= _voted ? 'Remove vote for' : 'Upvote' %> <%= h(song.title) %>"><%= _voted ? '✘' : '▲' %></button>
                         <span class="vote-count<%= ' vote-count--voted' if _voted %><%= ' vote-count--flash' if params[:voted].to_s == song.id.to_s %>"><%= song.votes_count %></span>
                     </form>
@@ -101,6 +103,7 @@
                                 _action = _voted ? 'downvote' : 'upvote'
                             %>
                             <form method="post" action="/band/<%= @band.slug %>/songs/<%= song.id %>/<%= _action %>?by=<%= @view_by %>" class="vote-form">
+                                <%= csrf_tag %>
                                 <button type="submit" class="vote-btn" aria-label="<%= _voted ? 'Remove vote for' : 'Upvote' %> <%= h(song.title) %>"><%= _voted ? '✘' : '▲' %></button>
                                 <span class="vote-count<%= ' vote-count--voted' if _voted %><%= ' vote-count--flash' if params[:voted].to_s == song.id.to_s %>"><%= song.votes_count %></span>
                             </form>

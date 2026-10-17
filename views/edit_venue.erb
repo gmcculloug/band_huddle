@@ -3,6 +3,7 @@
 <%= erb :_errors %>
 
 <form method="POST" action="/venues/<%= @venue.id %>" class="card">
+    <%= csrf_tag %>
     <input type="hidden" name="_method" value="PUT">
     
     <div class="form-group">
@@ -42,4 +43,4 @@
     </div>
 
     <%= erb :_form_actions, locals: { submit_text: 'Update Venue', cancel_url: "/venues/#{@venue.id}" } %>
-</form> 
+</form>

@@ -3,6 +3,7 @@
 <%= erb :_errors %>
 
 <form method="POST" action="/venues" class="card">
+    <%= csrf_tag %>
     <div class="form-group">
         <label for="venue_name">Venue Name *</label>
         <input type="text" id="venue_name" name="venue[name]" required autofocus>
@@ -40,4 +41,4 @@
     </div>
 
     <%= erb :_form_actions, locals: { submit_text: 'Save Venue', cancel_url: '/venues' } %>
-</form> 
+</form>
