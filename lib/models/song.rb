@@ -1,6 +1,8 @@
 class Song < ActiveRecord::Base
   include Archivable
+  include HttpUrlValidation
   include StripsWhitespace
+  validates_http_url :url
   belongs_to :song_catalog, optional: true
   has_many :song_bands, dependent: :destroy
   has_many :bands, through: :song_bands

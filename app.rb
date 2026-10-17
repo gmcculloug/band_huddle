@@ -18,6 +18,7 @@ end
 
 # Load concerns
 require_relative 'lib/concerns/archivable'
+require_relative 'lib/concerns/http_url_validation'
 require_relative 'lib/concerns/strips_whitespace'
 
 # Load models

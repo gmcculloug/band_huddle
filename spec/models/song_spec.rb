@@ -2,6 +2,26 @@ require 'spec_helper'
 
 RSpec.describe Song, type: :model do
   describe 'validations' do
+    it 'allows a valid https streaming URL' do
+      song = build(:song, url: 'https://example.com/stream')
+
+      expect(song).to be_valid
+    end
+
+    it 'rejects an unsafe streaming URL scheme' do
+      song = build(:song, url: 'javascript:alert(1)')
+
+      expect(song).not_to be_valid
+      expect(song.errors[:url]).to include('must be a valid http:// or https:// URL')
+    end
+
+    it 'rejects a malformed streaming URL' do
+      song = build(:song, url: 'not a url')
+
+      expect(song).not_to be_valid
+      expect(song.errors[:url]).to include('must be a valid http:// or https:// URL')
+    end
+
     it 'is valid with valid attributes' do
       song = build(:song)
       expect(song).to be_valid
@@ -137,4 +157,4 @@ RSpec.describe Song, type: :model do
       expect(song.artist).to eq('Oasis')
     end
   end
-end 
+end

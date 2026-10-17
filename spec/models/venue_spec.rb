@@ -1,6 +1,30 @@
 require 'spec_helper'
 
 RSpec.describe Venue, type: :model do
+  describe 'URL validation' do
+    it 'allows valid http and https website and map URLs' do
+      venue = build(:venue, website: 'http://example.com', map_url: 'https://example.com/map')
+
+      expect(venue).to be_valid
+    end
+
+    it 'rejects unsafe website and map URL schemes' do
+      venue = build(:venue, website: 'javascript:alert(1)', map_url: 'data:text/html,alert(1)')
+
+      expect(venue).not_to be_valid
+      expect(venue.errors[:website]).to include('must be a valid http:// or https:// URL')
+      expect(venue.errors[:map_url]).to include('must be a valid http:// or https:// URL')
+    end
+
+    it 'rejects website and map URLs without hosts' do
+      venue = build(:venue, website: 'https:///path', map_url: 'not a url')
+
+      expect(venue).not_to be_valid
+      expect(venue.errors[:website]).to include('must be a valid http:// or https:// URL')
+      expect(venue.errors[:map_url]).to include('must be a valid http:// or https:// URL')
+    end
+  end
+
   describe 'associations' do
     it 'belongs to a band' do
       band = create(:band)
@@ -113,4 +137,4 @@ RSpec.describe Venue, type: :model do
       expect { venue.destroy }.to change(Venue, :count).by(-1)
     end
   end
-end 
+end

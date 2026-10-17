@@ -2,6 +2,40 @@ require_relative '../spec_helper'
 
 RSpec.describe SongCatalog, type: :model do
   describe 'validations' do
+    it 'allows a valid http streaming URL' do
+      song_catalog = SongCatalog.new(
+        title: 'Test Song',
+        artist: 'Test Artist',
+        key: 'C',
+        duration: '3:45',
+        url: 'http://example.com/stream'
+      )
+
+      expect(song_catalog).to be_valid
+    end
+
+    it 'rejects unsafe and malformed streaming URLs' do
+      unsafe_song_catalog = SongCatalog.new(
+        title: 'Test Song',
+        artist: 'Test Artist',
+        key: 'C',
+        duration: '3:45',
+        url: 'javascript:alert(1)'
+      )
+      malformed_song_catalog = SongCatalog.new(
+        title: 'Test Song',
+        artist: 'Test Artist',
+        key: 'C',
+        duration: '3:45',
+        url: 'not a url'
+      )
+
+      expect(unsafe_song_catalog).not_to be_valid
+      expect(unsafe_song_catalog.errors[:url]).to include('must be a valid http:// or https:// URL')
+      expect(malformed_song_catalog).not_to be_valid
+      expect(malformed_song_catalog.errors[:url]).to include('must be a valid http:// or https:// URL')
+    end
+
     it 'is valid with valid attributes' do
       song_catalog = SongCatalog.new(
         title: 'Test Song',

@@ -1,6 +1,8 @@
 class SongCatalog < ActiveRecord::Base
   include Archivable
+  include HttpUrlValidation
   include StripsWhitespace
+  validates_http_url :url
   has_many :songs
   
   validates :title, presence: true
