@@ -118,6 +118,114 @@ class Routes::OAuth < Sinatra::Base
   end
 
   # ============================================================================
+  # OAUTH LINK CONFIRMATION (must come before :provider routes)
+  # ============================================================================
+
+  # Display password confirmation for linking OAuth to an existing account
+  get '/auth/link_account' do
+    pending_data = session[:pending_oauth_link]
+
+    unless pending_data
+      puts "[OAUTH DEBUG] No pending OAuth link data found, redirecting to login"
+      redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
+    end
+
+    # Check session timeout (30 minutes = 1800 seconds)
+    if Time.now.to_i - pending_data[:timestamp] > 1800
+      puts "[OAUTH DEBUG] Pending OAuth link session expired"
+      session.delete(:pending_oauth_link)
+      redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
+    end
+
+    @provider = pending_data[:provider]
+    @email = pending_data[:user_info]['email']
+    @name = pending_data[:user_info]['name']
+
+    @breadcrumbs = [
+      { label: 'Link Account', url: nil, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>' }
+    ]
+
+    erb :oauth_link_confirmation
+  end
+
+  # Confirm linking with the account password
+  post '/auth/link_account' do
+    pending_data = session[:pending_oauth_link]
+
+    unless pending_data
+      puts "[OAUTH DEBUG] No pending OAuth link data found, redirecting to login"
+      redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
+    end
+
+    # Check session timeout (30 minutes = 1800 seconds)
+    if Time.now.to_i - pending_data[:timestamp] > 1800
+      puts "[OAUTH DEBUG] Pending OAuth link session expired"
+      session.delete(:pending_oauth_link)
+      redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
+    end
+
+    # Limit password attempts so the confirmation page cannot be used to
+    # brute-force the account password
+    if pending_data[:attempts].to_i >= 5
+      puts "[OAUTH DEBUG] Too many link confirmation attempts"
+      session.delete(:pending_oauth_link)
+      redirect "/login?error=#{URI.encode_www_form_component('Too many incorrect attempts. Please try signing in again.')}"
+    end
+
+    user = User.find_by(id: pending_data[:user_id])
+
+    if user.nil?
+      puts "[OAUTH DEBUG] Link target account no longer exists"
+      session.delete(:pending_oauth_link)
+      redirect "/login?error=#{URI.encode_www_form_component('Account no longer exists.')}"
+    end
+
+    if user.oauth_provider.present?
+      puts "[OAUTH DEBUG] Link target already has an OAuth provider"
+      session.delete(:pending_oauth_link)
+      error_msg = "This account is already linked to #{user.oauth_provider}. Only one OAuth provider per user is allowed."
+      redirect "/login?error=#{URI.encode_www_form_component(error_msg)}"
+    end
+
+    provider = pending_data[:provider]
+    user_info = pending_data[:user_info]
+
+    @provider = provider
+    @email = user_info['email']
+    @name = user_info['name']
+
+    @breadcrumbs = [
+      { label: 'Link Account', url: nil, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>' }
+    ]
+
+    if user.authenticate(params[:password])
+      puts "[OAUTH DEBUG] Link confirmed, attaching OAuth identity"
+      OauthService.link_oauth_to_user(user, provider, user_info)
+
+      # Clear pending link data
+      session.delete(:pending_oauth_link)
+
+      # Log in the user
+      session[:user_id] = user.id
+
+      # Handle band selection (same as normal OAuth flow)
+      if user.last_selected_band && user.bands.include?(user.last_selected_band)
+        session[:band_id] = user.last_selected_band.id
+      elsif user.bands.any?
+        session[:band_id] = user.bands.first.id
+      end
+
+      puts "[OAUTH DEBUG] OAuth identity linked and user logged in, redirecting to /gigs"
+      redirect '/gigs'
+    else
+      puts "[OAUTH DEBUG] Incorrect password during link confirmation"
+      session[:pending_oauth_link] = pending_data.merge(attempts: pending_data[:attempts].to_i + 1)
+      @errors = ['Incorrect password. Please try again.']
+      erb :oauth_link_confirmation
+    end
+  end
+
+  # ============================================================================
   # OAUTH AUTHORIZATION ROUTES
   # ============================================================================
 
@@ -223,28 +331,51 @@ class Routes::OAuth < Sinatra::Base
 
       puts "[OAUTH DEBUG] User information fetched successfully"
 
-      # Check if this is an existing user or a new signup
+      # Check if this OAuth identity is already linked to an account
       puts "[OAUTH DEBUG] Checking if user exists"
-      existing_user = OauthService.find_existing_oauth_user(provider, user_info)
+      user = OauthService.find_existing_oauth_user(provider, user_info)
 
-      if existing_user
-        # Existing user - continue normal flow
-        puts "[OAUTH DEBUG] Existing user found: #{existing_user.username} (ID: #{existing_user.id})"
-        user = existing_user
+      if user
+        # Existing linked user - continue normal flow
+        puts "[OAUTH DEBUG] Existing linked user found: #{user.username} (ID: #{user.id})"
       else
-        # New user - requires account creation code validation
-        puts "[OAUTH DEBUG] New user detected - requires account creation code"
+        # A provider-verified email may match an existing local account.
+        # Never link silently: an account with a local password must confirm
+        # that password before the OAuth identity is attached.
+        link_candidate = OauthService.find_link_candidate_by_email(provider, user_info)
 
-        # Store OAuth data in session for later user creation
-        session[:pending_oauth_user] = {
-          provider: provider,
-          user_info: user_info,
-          token_data: token_data,
-          timestamp: Time.now.to_i
-        }
+        if link_candidate
+          puts "[OAUTH DEBUG] Verified email matches password account - requiring link confirmation"
+          session[:pending_oauth_link] = {
+            provider: provider,
+            user_id: link_candidate.id,
+            user_info: user_info,
+            timestamp: Time.now.to_i
+          }
 
-        puts "[OAUTH DEBUG] OAuth data stored in session, redirecting to account creation code verification"
-        redirect '/auth/verify_account_creation_code'
+          puts "[OAUTH DEBUG] Redirecting to OAuth link confirmation"
+          redirect '/auth/link_account'
+        elsif user_info['email'].present? && User.find_by(email: user_info['email'])
+          # Email collision the provider has not verified - refuse rather
+          # than create a second account claiming the same address
+          puts "[OAUTH DEBUG] Unverified email matches existing account - refusing"
+          error_msg = "An account with this email already exists. Sign in with your password, or verify this email address with #{provider.capitalize} and try again."
+          redirect "/login?error=#{URI.encode_www_form_component(error_msg)}"
+        else
+          # New user - requires account creation code validation
+          puts "[OAUTH DEBUG] New user detected - requires account creation code"
+
+          # Store OAuth data in session for later user creation
+          session[:pending_oauth_user] = {
+            provider: provider,
+            user_info: user_info,
+            token_data: token_data,
+            timestamp: Time.now.to_i
+          }
+
+          puts "[OAUTH DEBUG] OAuth data stored in session, redirecting to account creation code verification"
+          redirect '/auth/verify_account_creation_code'
+        end
       end
 
       puts "[OAUTH DEBUG] User account resolved: #{user.username} (ID: #{user.id})"

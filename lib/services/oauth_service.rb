@@ -220,6 +220,16 @@ class OauthService
       if response.is_a?(Net::HTTPSuccess)
         puts "[OAUTH DEBUG] User info fetch successful"
         user_info = JSON.parse(response.body)
+
+        # GitHub's /user endpoint returns the public profile email, which the
+        # user can set to any address. Only emails GitHub has confirmed via
+        # /user/emails may be trusted for account matching or linking.
+        if provider.to_s == 'github'
+          verified_email = fetch_github_verified_email(access_token_or_data)
+          user_info['email'] = verified_email || user_info['email']
+          user_info['email_verified'] = !verified_email.nil?
+        end
+
         puts "[OAUTH DEBUG] Raw user info keys: #{user_info.keys}"
         puts "[OAUTH DEBUG] User email: #{user_info['email']}"
         puts "[OAUTH DEBUG] User ID: #{user_info['id']}"
@@ -246,51 +256,32 @@ class OauthService
       nil
     end
 
-    # Find existing OAuth user
+    # Find a user already linked to this OAuth identity (provider + uid).
+    # Email matching is intentionally excluded here: attaching an OAuth
+    # identity to an existing account is handled explicitly through
+    # find_link_candidate_by_email and the /auth/link_account confirmation
+    # flow, so an unverified provider email can never take over an account.
     def find_existing_oauth_user(provider, user_info)
-      puts "[OAUTH DEBUG] Looking for existing OAuth user for #{provider}"
-
       provider = provider.to_s
       oauth_uid = user_info['id']
+
+      User.find_by(oauth_provider: provider, oauth_uid: oauth_uid)
+    end
+
+    # Find an existing account eligible for OAuth linking by email. Returns
+    # nil unless the provider explicitly verified the email address, and nil
+    # when the account already carries an OAuth identity (uid uniqueness
+    # would reject that link anyway).
+    def find_link_candidate_by_email(provider, user_info)
       email = user_info['email']
+      return nil if email.nil? || email.empty?
+      return nil unless user_info['email_verified'] == true
 
-      puts "[OAUTH DEBUG] OAuth UID: #{oauth_uid}"
-      puts "[OAUTH DEBUG] Email: #{email}"
+      user = User.find_by(email: email)
+      return nil if user.nil?
+      return nil if user.oauth_provider.present?
 
-      # Check if user already exists with this OAuth provider
-      puts "[OAUTH DEBUG] Looking for existing user with oauth_provider='#{provider}' and oauth_uid='#{oauth_uid}'"
-      existing_user = User.find_by(oauth_provider: provider, oauth_uid: oauth_uid)
-
-      if existing_user
-        puts "[OAUTH DEBUG] Found existing OAuth user: #{existing_user.username} (ID: #{existing_user.id})"
-        return existing_user
-      end
-
-      # Check if user exists by email (for account linking)
-      if email && !email.empty?
-        puts "[OAUTH DEBUG] Looking for existing user with email '#{email}'"
-        user_by_email = User.find_by(email: email)
-
-        if user_by_email
-          # Check if user already has an OAuth provider (single provider restriction)
-          if user_by_email.oauth_provider && user_by_email.oauth_provider != provider
-            error_msg = "User already has #{user_by_email.oauth_provider} OAuth account. Only one OAuth provider per user is allowed."
-            puts "[OAUTH DEBUG] ERROR: #{error_msg}"
-            raise error_msg
-          end
-
-          puts "[OAUTH DEBUG] Found user by email for linking: #{user_by_email.username} (ID: #{user_by_email.id})"
-          # Link OAuth to existing user and return
-          return link_oauth_to_user(user_by_email, provider, user_info)
-        end
-      end
-
-      puts "[OAUTH DEBUG] No existing user found"
-      nil
-    rescue => e
-      puts "[OAUTH DEBUG] ERROR in find_existing_oauth_user: #{e.message}"
-      puts "[OAUTH DEBUG] ERROR: #{e.backtrace.first(5).join("\n")}"
-      raise e
+      user
     end
 
     # Create OAuth user with account creation code validation
@@ -364,6 +355,24 @@ class OauthService
       user
     end
 
+    # Link OAuth to an existing user. Callers must have authenticated the
+    # user (password confirmation or provider-verified email); the guard
+    # below only prevents attaching a second OAuth identity.
+    def link_oauth_to_user(user, provider, user_info)
+      if user.oauth_provider.present?
+        raise "User already has #{user.oauth_provider} OAuth account. Only one OAuth provider per user is allowed."
+      end
+
+      user.update!(
+        oauth_provider: provider,
+        oauth_uid: user_info['id'],
+        oauth_email: user_info['email'],
+        oauth_username: user_info['username']
+      )
+
+      user
+    end
+
     # Check if provider is properly configured
     def provider_configured?(provider)
       case provider.to_s
@@ -394,6 +403,7 @@ class OauthService
         {
           'id' => raw_info['id'],
           'email' => raw_info['email'],
+          'email_verified' => raw_info['verified_email'] == true,
           'name' => raw_info['name'],
           'username' => raw_info['email']&.split('@')&.first,
           'picture' => raw_info['picture'],
@@ -404,6 +414,7 @@ class OauthService
         {
           'id' => raw_info['id'].to_s,
           'email' => raw_info['email'],
+          'email_verified' => raw_info['email_verified'] == true,
           'name' => raw_info['name'] || raw_info['login'],
           'username' => raw_info['login'],
           'picture' => raw_info['avatar_url'],
@@ -419,6 +430,7 @@ class OauthService
         {
           'id' => raw_info['sub'],
           'email' => email,
+          'email_verified' => provider_email_verified?(raw_info['email_verified']),
           'name' => name,
           'username' => email&.split('@')&.first,
           'picture' => nil, # Apple doesn't provide profile pictures
@@ -428,26 +440,6 @@ class OauthService
       else
         raw_info
       end
-    end
-
-    # Link OAuth to existing user
-    def link_oauth_to_user(user, provider, user_info)
-      puts "[OAUTH DEBUG] Linking OAuth to existing user #{user.username} (ID: #{user.id})"
-      puts "[OAUTH DEBUG] Updating with provider: #{provider}, uid: #{user_info['id']}, email: #{user_info['email']}, username: #{user_info['username']}"
-
-      user.update!(
-        oauth_provider: provider,
-        oauth_uid: user_info['id'],
-        oauth_email: user_info['email'],
-        oauth_username: user_info['username']
-      )
-
-      puts "[OAUTH DEBUG] OAuth successfully linked to user #{user.username}"
-      user
-    rescue => e
-      puts "[OAUTH DEBUG] ERROR linking OAuth to user: #{e.message}"
-      puts "[OAUTH DEBUG] ERROR: #{e.backtrace.first(3).join("\n")}"
-      raise e
     end
 
     # Create new user with OAuth
@@ -505,6 +497,43 @@ class OauthService
       end
 
       username
+    end
+
+    # Fetch the user's verified email addresses from GitHub. The /user
+    # endpoint exposes a user-controlled public email; /user/emails returns
+    # only addresses GitHub has actually confirmed with the user.
+    def fetch_github_verified_email(access_token)
+      uri = URI('https://api.github.com/user/emails')
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+
+      request = Net::HTTP::Get.new(uri)
+      request['Authorization'] = "Bearer #{access_token}"
+      request['Accept'] = 'application/vnd.github+json'
+      request['User-Agent'] = 'BandHuddle-OAuth-Client'
+
+      response = http.request(request)
+      return nil unless response.is_a?(Net::HTTPSuccess)
+
+      select_verified_github_email(JSON.parse(response.body))
+    rescue => e
+      Rails.logger.error("GitHub verified email fetch failed: #{e.message}") if defined?(Rails)
+      nil
+    end
+
+    # Pick the primary verified email, falling back to any verified address
+    def select_verified_github_email(emails)
+      return nil unless emails.is_a?(Array)
+
+      verified = emails.select { |entry| entry.is_a?(Hash) && entry['verified'] == true }
+      verified.find { |entry| entry['primary'] == true }&.fetch('email', nil) ||
+        verified.first&.fetch('email', nil)
+    end
+
+    # Provider email-verification claims arrive as booleans (Google, GitHub)
+    # or strings (Apple: "true"/"false")
+    def provider_email_verified?(value)
+      value == true || value == 'true'
     end
 
     # Get client ID for provider

@@ -1,0 +1,35 @@
+<h2>Confirm Account Link</h2>
+
+<%= erb :_errors %>
+
+<!-- Simple OAuth Context -->
+<div style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0284c7;">
+    <p style="margin: 0; color: #0c4a6e;">
+        <strong>Signing in with <%= @provider&.capitalize %>:</strong> <%= @email %>
+    </p>
+</div>
+
+<!-- Simple explanation -->
+<p style="color: #666; margin-bottom: 20px;">
+    An account already exists for this email address. Enter your password to link
+    your <%= @provider&.capitalize %> account and sign in.
+</p>
+
+<form method="POST" action="/auth/link_account">
+    <%= csrf_tag %>
+    <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password"
+               id="password"
+               name="password"
+               required
+               autofocus
+               placeholder="Enter your account password">
+        <small>Confirming links this <%= @provider&.capitalize %> identity to your existing account</small>
+    </div>
+
+    <div class="actions">
+        <button type="submit" class="btn">Link Account</button>
+        <a href="/login" class="btn">Cancel</a>
+    </div>
+</form>
