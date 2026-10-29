@@ -1,18 +1,20 @@
 # Security Review — 2026-10-15
 
+Updated 2026-10-18: corrected remediation statuses against current code (HIGH-006, MEDIUM-003, MEDIUM-004, MEDIUM-005), refreshed line references, and regenerated the remediation roadmap.
+
 This review covers application authentication, authorization, browser security, OAuth, JWT handling, public endpoints, service-worker caching, and Docker deployment configuration.
 
 ## Executive Summary
 
-The application has a generally strong band-scoping pattern and uses parameterized ActiveRecord queries, but several issues should be treated as release blockers:
+The application has a generally strong band-scoping pattern and uses parameterized ActiveRecord queries. The original review identified seven critical and six high findings; most have since been remediated. Remaining open issues, in priority order:
 
-- Passwords and deployment secrets can be written to logs.
-- Browser endpoints do not have CSRF protection.
-- Apple OAuth identity tokens are accepted without cryptographic validation.
-- OAuth users can be linked to existing accounts using potentially unverified email addresses.
-- PostgreSQL and unauthenticated Valkey are exposed on Docker host interfaces.
-- User-controlled URLs can produce stored `javascript:` links.
-- Mobile refresh tokens cannot actually be revoked.
+- Apple OAuth identity tokens are accepted without cryptographic validation (CRITICAL-003).
+- Login has no effective brute-force defense (HIGH-003); this is the only open finding an unauthenticated attacker can exercise today.
+- Mobile refresh tokens cannot actually be revoked (HIGH-001).
+- Session cookies lack explicit security attributes, and session IDs are not rotated after login (HIGH-002).
+- Any band member can change security-sensitive band settings, including public visibility (HIGH-006).
+- Broad mass assignment on band and song routes (HIGH-004).
+- OAuth debug output still logs user emails, IDs, and names (MEDIUM-004).
 
 ## Critical Findings
 
@@ -42,7 +44,7 @@ The application has a generally strong band-scoping pattern and uses parameteriz
 
 ### CRITICAL-003 — Apple identity token is not verified
 
-- **Location:** `lib/services/oauth_service.rb:559`
+- **Location:** `lib/services/oauth_service.rb:587`
 - **Issue:** Apple's ID token is decoded with `JWT.decode(..., nil, false)`. Signature, issuer, audience, and expiration are not validated.
 - **Impact:** Identity claims should not be trusted without validation. A flaw or compromise in the surrounding token-exchange flow could allow forged identity claims.
 - **Remediation:**
@@ -180,7 +182,7 @@ The application has a generally strong band-scoping pattern and uses parameteriz
 - **Remediation:**
   - Restrict public exposure, integration, membership, and destructive settings to owners or an explicit admin role.
   - Consider an audited approval process for public visibility changes.
-- **Status:** Code fixed; vote and recommendation limits combine device ID and IP address, with aggregate per-band caps
+- **Status:** Open. The status previously recorded here described the MEDIUM-003 fix and was recorded in error; the member-permission restriction itself has not been implemented. All three routes still check only band membership (lib/routes/bands.rb:386, lib/routes/bands.rb:483, lib/routes/bands.rb:542).
 
 ## Medium Findings
 
@@ -206,14 +208,14 @@ The application has a generally strong band-scoping pattern and uses parameteriz
 
 - **Locations:**
   - `lib/routes/public_songs.rb:76`
-  - `lib/routes/public_songs.rb:123`
+  - `lib/routes/public_songs.rb:124`
 - **Issue:** Controls depend primarily on a device cookie that can be discarded or forged. IP address is stored but not used in the limit.
 - **Impact:** Vote manipulation and recommendation spam remain feasible.
 - **Remediation:**
   - Combine IP, device ID, fingerprint-resistant signals, and challenge/CAPTCHA thresholds.
   - Add per-band aggregate limits.
   - Add monitoring and the ability to temporarily disable public submissions.
-- **Status:** Open
+- **Status:** Code fixed; vote and recommendation limits combine device ID and IP address, with aggregate per-band caps (lib/routes/public_songs.rb:76-77, lib/routes/public_songs.rb:124-126)
 
 ### MEDIUM-004 — Verbose OAuth diagnostics
 
@@ -224,7 +226,7 @@ The application has a generally strong band-scoping pattern and uses parameteriz
   - Replace `puts` debugging with structured logging.
   - Log opaque request IDs and status only.
   - Redact emails, UIDs, tokens, authorization codes, and secrets.
-- **Status:** Open
+- **Status:** Partially fixed. Client IDs, secrets, and token values are redacted, but debug output still logs emails, user IDs, names, and full normalized user info (lib/services/oauth_service.rb:171, lib/services/oauth_service.rb:234-236, lib/services/oauth_service.rb:240, lib/services/oauth_service.rb:326)
 
 ### MEDIUM-005 — Logout is a GET request
 
@@ -232,7 +234,7 @@ The application has a generally strong band-scoping pattern and uses parameteriz
 - **Issue:** Logout can be triggered by cross-site navigation, prefetching, or link scanners.
 - **Impact:** Availability impact and unnecessary session churn; also conflicts with CSRF-safe mutation design.
 - **Remediation:** Change logout to `POST`, require CSRF protection, and clear service-worker gig caches.
-- **Status:** Open
+- **Status:** Code fixed; logout is now a protected POST route (lib/routes/authentication.rb:62)
 
 ## Positive Observations
 
@@ -244,32 +246,32 @@ The application has a generally strong band-scoping pattern and uses parameteriz
 
 ## Remediation Roadmap
 
-### Phase 0 — Immediate
+### Phase 0 — Immediate (complete)
 
-1. Remove password and secret logging.
-2. Rotate potentially exposed secrets.
-3. Remove external PostgreSQL and Valkey ports.
-4. Enable CSRF protection.
-5. Add server-side URL scheme validation.
+1. Remove password and secret logging. Done (CRITICAL-001, CRITICAL-006).
+2. Remove external PostgreSQL and Valkey ports. Done (CRITICAL-005).
+3. Enable CSRF protection. Done (CRITICAL-002).
+4. Add server-side URL scheme validation. Done (CRITICAL-007).
+5. Rotate potentially exposed secrets. Operational follow-up: rotate historically logged passwords (CRITICAL-001) and the account-creation secret if the previous deployment ran (CRITICAL-006); confirm completion.
 
-### Phase 1 — High priority
+### Phase 1 — High priority (remaining open work, priority order)
 
-1. Verify Apple identity tokens.
-2. Require verified email or explicit linking for OAuth.
-3. Implement revocable and rotating refresh tokens.
-4. Harden session cookies and rotate session IDs.
-5. Add login throttling and lockout.
-6. Add parameter allowlists.
-7. Restrict security-sensitive band settings to owners/admins.
+1. Verify Apple identity tokens (CRITICAL-003).
+2. Add login throttling, lockout, and security events (HIGH-003). Ordered above the other High findings because it is the only open finding an unauthenticated attacker can exercise today.
+3. Implement revocable and rotating refresh tokens (HIGH-001).
+4. Harden session cookies and rotate session IDs (HIGH-002).
+5. Restrict security-sensitive band settings to owners/admins (HIGH-006).
+6. Add parameter allowlists (HIGH-004).
+7. Finish redacting OAuth diagnostics (MEDIUM-004; moved up from Phase 2 because emails, user IDs, and names are still logged).
 
-### Phase 2 — Defense in depth
+### Phase 2 — Defense in depth (complete; remaining item moved to Phase 1)
 
-1. Add CSP and remaining security headers.
-2. Prevent authenticated responses from entering persistent caches.
-3. Clear service-worker caches on logout and band switching.
-4. Strengthen public vote/recommendation abuse controls.
-5. Redact OAuth diagnostics.
-6. Change logout to a protected `POST` route.
+1. Add CSP and remaining security headers. Done (MEDIUM-001, MEDIUM-002).
+2. Prevent authenticated responses from entering persistent caches. Done (HIGH-005).
+3. Clear service-worker caches on logout and band switching. Done (HIGH-005).
+4. Strengthen public vote/recommendation abuse controls. Done (MEDIUM-003).
+5. Redact OAuth diagnostics. Moved to Phase 1 item 7 (MEDIUM-004).
+6. Change logout to a protected `POST` route. Done (MEDIUM-005).
 
 ## Regression Tests To Add
 

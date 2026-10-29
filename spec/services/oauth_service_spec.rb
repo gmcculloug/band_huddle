@@ -34,6 +34,12 @@ RSpec.describe OauthService do
       expect(candidate_for(user_info)).to eq(local_user)
     end
 
+    it 'matches the email case-insensitively' do
+      user_info = { 'id' => '99999', 'email' => 'Existing@Example.COM', 'email_verified' => true }
+
+      expect(candidate_for(user_info)).to eq(local_user)
+    end
+
     it 'returns nil when the provider has not verified the email' do
       user_info = { 'id' => '99999', 'email' => 'existing@example.com', 'email_verified' => false }
 
@@ -61,6 +67,27 @@ RSpec.describe OauthService do
       user_info = { 'id' => '99999', 'email' => 'existing@example.com', 'email_verified' => true }
 
       expect(candidate_for(user_info)).to be_nil
+    end
+  end
+
+  describe '.fetch_user_info for Apple' do
+    let(:token_data) do
+      {
+        'access_token' => 'apple-access-token',
+        'user_info' => { 'sub' => 'apple-1', 'email' => 'apple@example.com', 'email_verified' => 'true' }
+      }
+    end
+
+    it 'reads user info from the token exchange response' do
+      normalized = described_class.fetch_user_info('apple', token_data)
+
+      expect(normalized['id']).to eq('apple-1')
+      expect(normalized['email']).to eq('apple@example.com')
+      expect(normalized['email_verified']).to be(true)
+    end
+
+    it 'returns nil for a bare access token string' do
+      expect(described_class.fetch_user_info('apple', 'apple-access-token')).to be_nil
     end
   end
 

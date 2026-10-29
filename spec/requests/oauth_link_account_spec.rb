@@ -38,6 +38,17 @@ RSpec.describe 'OAuth account linking', type: :request do
       expect(local_user.reload.oauth_provider).to be_nil
     end
 
+    it 'matches a verified email that differs only in case' do
+      stub_github_callback('id' => '99999', 'email' => 'Existing@Example.COM',
+                           'email_verified' => true, 'name' => 'Legit User', 'username' => 'legit')
+
+      github_callback
+
+      expect(last_response.status).to eq(302)
+      expect(last_response.headers['Location']).to include('/auth/link_account')
+      expect(local_user.reload.oauth_provider).to be_nil
+    end
+
     it 'does not match when the verified email belongs to no account' do
       stub_github_callback('id' => '99999', 'email' => 'nobody@example.com',
                            'email_verified' => true, 'name' => 'New User', 'username' => 'new')
@@ -46,6 +57,23 @@ RSpec.describe 'OAuth account linking', type: :request do
 
       expect(last_response.status).to eq(302)
       expect(last_response.headers['Location']).to include('/auth/verify_account_creation_code')
+    end
+  end
+
+  describe 'Apple callback' do
+    it 'passes the whole token response to fetch_user_info' do
+      token_data = {
+        'access_token' => 'apple-token',
+        'user_info' => { 'sub' => 'apple-1', 'email' => 'apple-new@example.com', 'email_verified' => 'true' }
+      }
+      user_info = { 'id' => 'apple-1', 'email' => 'apple-new@example.com', 'email_verified' => true }
+
+      allow(OauthService).to receive(:exchange_code_for_token).and_return(token_data)
+      expect(OauthService).to receive(:fetch_user_info).with('apple', token_data).and_return(user_info)
+
+      get '/auth/apple/callback', { code: 'auth-code' }
+
+      expect(last_response.status).to eq(302)
     end
   end
 

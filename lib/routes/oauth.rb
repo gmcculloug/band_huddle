@@ -13,6 +13,7 @@ class Routes::OAuth < Sinatra::Base
 
   # Load services
   require_relative '../services/oauth_service'
+  require_relative '../helpers/oauth_debug_log'
 
   # ============================================================================
   # OAUTH ACCOUNT CREATION CODE VERIFICATION (must come before :provider routes)
@@ -22,7 +23,7 @@ class Routes::OAuth < Sinatra::Base
   get '/auth/verify_account_creation_code' do
     # Check if there's pending OAuth user data
     unless session[:pending_oauth_user]
-      puts "[OAUTH DEBUG] No pending OAuth user data found, redirecting to login"
+      OauthDebugLog.log "[OAUTH DEBUG] No pending OAuth user data found, redirecting to login"
       redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
     end
 
@@ -31,7 +32,7 @@ class Routes::OAuth < Sinatra::Base
 
     # Check session timeout (30 minutes = 1800 seconds)
     if Time.now.to_i - pending_data[:timestamp] > 1800
-      puts "[OAUTH DEBUG] Pending OAuth session expired"
+      OauthDebugLog.log "[OAUTH DEBUG] Pending OAuth session expired"
       session.delete(:pending_oauth_user)
       redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
     end
@@ -51,7 +52,7 @@ class Routes::OAuth < Sinatra::Base
   post '/auth/verify_account_creation_code' do
     # Check if there's pending OAuth user data
     unless session[:pending_oauth_user]
-      puts "[OAUTH DEBUG] No pending OAuth user data found, redirecting to login"
+      OauthDebugLog.log "[OAUTH DEBUG] No pending OAuth user data found, redirecting to login"
       redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
     end
 
@@ -59,7 +60,7 @@ class Routes::OAuth < Sinatra::Base
 
     # Check session timeout (30 minutes = 1800 seconds)
     if Time.now.to_i - pending_data[:timestamp] > 1800
-      puts "[OAUTH DEBUG] Pending OAuth session expired"
+      OauthDebugLog.log "[OAUTH DEBUG] Pending OAuth session expired"
       session.delete(:pending_oauth_user)
       redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
     end
@@ -77,12 +78,12 @@ class Routes::OAuth < Sinatra::Base
     ]
 
     begin
-      puts "[OAUTH DEBUG] Attempting to create OAuth user with validation"
+      OauthDebugLog.log "[OAUTH DEBUG] Attempting to create OAuth user with validation"
 
       # Create user with validation
       user = OauthService.create_oauth_user_with_validation(provider, user_info, account_creation_code)
 
-      puts "[OAUTH DEBUG] User created successfully: #{user.username} (ID: #{user.id})"
+      OauthDebugLog.log "[OAUTH DEBUG] User created successfully: #{user.username} (ID: #{user.id})"
 
       # Clear pending OAuth data
       session.delete(:pending_oauth_user)
@@ -97,11 +98,11 @@ class Routes::OAuth < Sinatra::Base
         session[:band_id] = user.bands.first.id
       end
 
-      puts "[OAUTH DEBUG] New OAuth user logged in successfully, redirecting to /gigs"
+      OauthDebugLog.log "[OAUTH DEBUG] New OAuth user logged in successfully, redirecting to /gigs"
       redirect '/gigs'
 
     rescue => e
-      puts "[OAUTH DEBUG] Error creating OAuth user: #{e.message}"
+      OauthDebugLog.log "[OAUTH DEBUG] Error creating OAuth user: #{e.message}"
 
       error_message = case e.message
       when /Invalid account creation code/
@@ -126,13 +127,13 @@ class Routes::OAuth < Sinatra::Base
     pending_data = session[:pending_oauth_link]
 
     unless pending_data
-      puts "[OAUTH DEBUG] No pending OAuth link data found, redirecting to login"
+      OauthDebugLog.log "[OAUTH DEBUG] No pending OAuth link data found, redirecting to login"
       redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
     end
 
     # Check session timeout (30 minutes = 1800 seconds)
     if Time.now.to_i - pending_data[:timestamp] > 1800
-      puts "[OAUTH DEBUG] Pending OAuth link session expired"
+      OauthDebugLog.log "[OAUTH DEBUG] Pending OAuth link session expired"
       session.delete(:pending_oauth_link)
       redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
     end
@@ -153,13 +154,13 @@ class Routes::OAuth < Sinatra::Base
     pending_data = session[:pending_oauth_link]
 
     unless pending_data
-      puts "[OAUTH DEBUG] No pending OAuth link data found, redirecting to login"
+      OauthDebugLog.log "[OAUTH DEBUG] No pending OAuth link data found, redirecting to login"
       redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
     end
 
     # Check session timeout (30 minutes = 1800 seconds)
     if Time.now.to_i - pending_data[:timestamp] > 1800
-      puts "[OAUTH DEBUG] Pending OAuth link session expired"
+      OauthDebugLog.log "[OAUTH DEBUG] Pending OAuth link session expired"
       session.delete(:pending_oauth_link)
       redirect "/login?error=#{URI.encode_www_form_component('Session expired. Please try signing in again.')}"
     end
@@ -167,7 +168,7 @@ class Routes::OAuth < Sinatra::Base
     # Limit password attempts so the confirmation page cannot be used to
     # brute-force the account password
     if pending_data[:attempts].to_i >= 5
-      puts "[OAUTH DEBUG] Too many link confirmation attempts"
+      OauthDebugLog.log "[OAUTH DEBUG] Too many link confirmation attempts"
       session.delete(:pending_oauth_link)
       redirect "/login?error=#{URI.encode_www_form_component('Too many incorrect attempts. Please try signing in again.')}"
     end
@@ -175,13 +176,13 @@ class Routes::OAuth < Sinatra::Base
     user = User.find_by(id: pending_data[:user_id])
 
     if user.nil?
-      puts "[OAUTH DEBUG] Link target account no longer exists"
+      OauthDebugLog.log "[OAUTH DEBUG] Link target account no longer exists"
       session.delete(:pending_oauth_link)
       redirect "/login?error=#{URI.encode_www_form_component('Account no longer exists.')}"
     end
 
     if user.oauth_provider.present?
-      puts "[OAUTH DEBUG] Link target already has an OAuth provider"
+      OauthDebugLog.log "[OAUTH DEBUG] Link target already has an OAuth provider"
       session.delete(:pending_oauth_link)
       error_msg = "This account is already linked to #{user.oauth_provider}. Only one OAuth provider per user is allowed."
       redirect "/login?error=#{URI.encode_www_form_component(error_msg)}"
@@ -199,7 +200,7 @@ class Routes::OAuth < Sinatra::Base
     ]
 
     if user.authenticate(params[:password])
-      puts "[OAUTH DEBUG] Link confirmed, attaching OAuth identity"
+      OauthDebugLog.log "[OAUTH DEBUG] Link confirmed, attaching OAuth identity"
       OauthService.link_oauth_to_user(user, provider, user_info)
 
       # Clear pending link data
@@ -215,10 +216,10 @@ class Routes::OAuth < Sinatra::Base
         session[:band_id] = user.bands.first.id
       end
 
-      puts "[OAUTH DEBUG] OAuth identity linked and user logged in, redirecting to /gigs"
+      OauthDebugLog.log "[OAUTH DEBUG] OAuth identity linked and user logged in, redirecting to /gigs"
       redirect '/gigs'
     else
-      puts "[OAUTH DEBUG] Incorrect password during link confirmation"
+      OauthDebugLog.log "[OAUTH DEBUG] Incorrect password during link confirmation"
       session[:pending_oauth_link] = pending_data.merge(attempts: pending_data[:attempts].to_i + 1)
       @errors = ['Incorrect password. Please try again.']
       erb :oauth_link_confirmation
@@ -262,9 +263,9 @@ class Routes::OAuth < Sinatra::Base
 
   # Handle OAuth callback
   get '/auth/:provider/callback' do
-    puts "\n[OAUTH DEBUG] ===== OAUTH CALLBACK STARTED ====="
-    puts "[OAUTH DEBUG] Provider: #{params[:provider]}"
-    puts "[OAUTH DEBUG] Error: #{params[:error]}"
+    OauthDebugLog.log "\n[OAUTH DEBUG] ===== OAUTH CALLBACK STARTED ====="
+    OauthDebugLog.log "[OAUTH DEBUG] Provider: #{params[:provider]}"
+    OauthDebugLog.log "[OAUTH DEBUG] Error: #{params[:error]}"
 
     provider = params[:provider]
     code = params[:code]
@@ -273,71 +274,74 @@ class Routes::OAuth < Sinatra::Base
 
     # Handle OAuth errors
     if error
-      puts "[OAUTH DEBUG] OAuth provider returned error: #{error}"
+      OauthDebugLog.log "[OAUTH DEBUG] OAuth provider returned error: #{error}"
       error_msg = case error
       when 'access_denied'
         'OAuth access was denied'
       else
         "OAuth error: #{error}"
       end
-      puts "[OAUTH DEBUG] Redirecting to login with error: #{error_msg}"
+      OauthDebugLog.log "[OAUTH DEBUG] Redirecting to login with error: #{error_msg}"
       redirect "/login?error=#{URI.encode_www_form_component(error_msg)}"
     end
 
     # Verify state parameter to prevent CSRF attacks
     unless state == session[:oauth_state]
-      puts "[OAUTH DEBUG] State mismatch! Expected: #{session[:oauth_state]}, Got: #{state}"
+      OauthDebugLog.log "[OAUTH DEBUG] State mismatch! Expected: #{session[:oauth_state]}, Got: #{state}"
       session.delete(:oauth_state)
       redirect "/login?error=#{URI.encode_www_form_component('Invalid OAuth state')}"
     end
 
-    puts "[OAUTH DEBUG] State verification passed"
+    OauthDebugLog.log "[OAUTH DEBUG] State verification passed"
 
     # Clear state from session
     session.delete(:oauth_state)
 
     # Validate required parameters
     unless code.present?
-      puts "[OAUTH DEBUG] Missing authorization code"
+      OauthDebugLog.log "[OAUTH DEBUG] Missing authorization code"
       redirect "/login?error=#{URI.encode_www_form_component('Missing OAuth authorization code')}"
     end
 
     begin
-      puts "[OAUTH DEBUG] Starting OAuth token exchange process"
+      OauthDebugLog.log "[OAUTH DEBUG] Starting OAuth token exchange process"
 
       # Exchange authorization code for access token
       redirect_uri = "#{request.base_url}/auth/#{provider}/callback"
-      puts "[OAUTH DEBUG] Redirect URI: #{redirect_uri}"
+      OauthDebugLog.log "[OAUTH DEBUG] Redirect URI: #{redirect_uri}"
 
       token_data = OauthService.exchange_code_for_token(provider, code, redirect_uri)
-      puts "[OAUTH DEBUG] Token exchange completed. Token data present: #{!token_data.nil?}"
+      OauthDebugLog.log "[OAUTH DEBUG] Token exchange completed. Token data present: #{!token_data.nil?}"
 
       unless token_data && token_data['access_token']
-        puts "[OAUTH DEBUG] ERROR: No access token received"
+        OauthDebugLog.log "[OAUTH DEBUG] ERROR: No access token received"
         redirect "/login?error=#{URI.encode_www_form_component('Failed to obtain OAuth access token')}"
       end
 
-      puts "[OAUTH DEBUG] Access token obtained successfully"
+      OauthDebugLog.log "[OAUTH DEBUG] Access token obtained successfully"
 
-      # Fetch user information
-      puts "[OAUTH DEBUG] Fetching user information"
-      user_info = OauthService.fetch_user_info(provider, token_data['access_token'])
-      puts "[OAUTH DEBUG] User info fetch completed. User info present: #{!user_info.nil?}"
+      # Fetch user information. Apple returns user info inside the token
+      # exchange response (decoded from the ID token), so it gets the whole
+      # token_data hash; other providers get the access token string.
+      OauthDebugLog.log "[OAUTH DEBUG] Fetching user information"
+      user_info_source = provider.to_s == 'apple' ? token_data : token_data['access_token']
+      user_info = OauthService.fetch_user_info(provider, user_info_source)
+      OauthDebugLog.log "[OAUTH DEBUG] User info fetch completed. User info present: #{!user_info.nil?}"
 
       unless user_info
-        puts "[OAUTH DEBUG] ERROR: Failed to fetch user information"
+        OauthDebugLog.log "[OAUTH DEBUG] ERROR: Failed to fetch user information"
         redirect "/login?error=#{URI.encode_www_form_component('Failed to fetch user information')}"
       end
 
-      puts "[OAUTH DEBUG] User information fetched successfully"
+      OauthDebugLog.log "[OAUTH DEBUG] User information fetched successfully"
 
       # Check if this OAuth identity is already linked to an account
-      puts "[OAUTH DEBUG] Checking if user exists"
+      OauthDebugLog.log "[OAUTH DEBUG] Checking if user exists"
       user = OauthService.find_existing_oauth_user(provider, user_info)
 
       if user
         # Existing linked user - continue normal flow
-        puts "[OAUTH DEBUG] Existing linked user found: #{user.username} (ID: #{user.id})"
+        OauthDebugLog.log "[OAUTH DEBUG] Existing linked user found: #{user.username} (ID: #{user.id})"
       else
         # A provider-verified email may match an existing local account.
         # Never link silently: an account with a local password must confirm
@@ -345,7 +349,7 @@ class Routes::OAuth < Sinatra::Base
         link_candidate = OauthService.find_link_candidate_by_email(provider, user_info)
 
         if link_candidate
-          puts "[OAUTH DEBUG] Verified email matches password account - requiring link confirmation"
+          OauthDebugLog.log "[OAUTH DEBUG] Verified email matches password account - requiring link confirmation"
           session[:pending_oauth_link] = {
             provider: provider,
             user_id: link_candidate.id,
@@ -353,17 +357,17 @@ class Routes::OAuth < Sinatra::Base
             timestamp: Time.now.to_i
           }
 
-          puts "[OAUTH DEBUG] Redirecting to OAuth link confirmation"
+          OauthDebugLog.log "[OAUTH DEBUG] Redirecting to OAuth link confirmation"
           redirect '/auth/link_account'
-        elsif user_info['email'].present? && User.find_by(email: user_info['email'])
+        elsif user_info['email'].present? && OauthService.find_user_by_email(user_info['email'])
           # Email collision the provider has not verified - refuse rather
           # than create a second account claiming the same address
-          puts "[OAUTH DEBUG] Unverified email matches existing account - refusing"
+          OauthDebugLog.log "[OAUTH DEBUG] Unverified email matches existing account - refusing"
           error_msg = "An account with this email already exists. Sign in with your password, or verify this email address with #{provider.capitalize} and try again."
           redirect "/login?error=#{URI.encode_www_form_component(error_msg)}"
         else
           # New user - requires account creation code validation
-          puts "[OAUTH DEBUG] New user detected - requires account creation code"
+          OauthDebugLog.log "[OAUTH DEBUG] New user detected - requires account creation code"
 
           # Store OAuth data in session for later user creation
           session[:pending_oauth_user] = {
@@ -373,44 +377,44 @@ class Routes::OAuth < Sinatra::Base
             timestamp: Time.now.to_i
           }
 
-          puts "[OAUTH DEBUG] OAuth data stored in session, redirecting to account creation code verification"
+          OauthDebugLog.log "[OAUTH DEBUG] OAuth data stored in session, redirecting to account creation code verification"
           redirect '/auth/verify_account_creation_code'
         end
       end
 
-      puts "[OAUTH DEBUG] User account resolved: #{user.username} (ID: #{user.id})"
+      OauthDebugLog.log "[OAUTH DEBUG] User account resolved: #{user.username} (ID: #{user.id})"
 
       # Log in the user
-      puts "[OAUTH DEBUG] Setting session user_id to: #{user.id}"
+      OauthDebugLog.log "[OAUTH DEBUG] Setting session user_id to: #{user.id}"
       session[:user_id] = user.id
 
       # Handle band selection
-      puts "[OAUTH DEBUG] Handling band selection"
-      puts "[OAUTH DEBUG] User's last selected band: #{user.last_selected_band&.name}"
-      puts "[OAUTH DEBUG] User's bands: #{user.bands.pluck(:name)}"
+      OauthDebugLog.log "[OAUTH DEBUG] Handling band selection"
+      OauthDebugLog.log "[OAUTH DEBUG] User's last selected band: #{user.last_selected_band&.name}"
+      OauthDebugLog.log "[OAUTH DEBUG] User's bands: #{user.bands.pluck(:name)}"
 
       if user.last_selected_band && user.bands.include?(user.last_selected_band)
-        puts "[OAUTH DEBUG] Setting session band_id to last selected: #{user.last_selected_band.id}"
+        OauthDebugLog.log "[OAUTH DEBUG] Setting session band_id to last selected: #{user.last_selected_band.id}"
         session[:band_id] = user.last_selected_band.id
       elsif user.bands.any?
-        puts "[OAUTH DEBUG] Setting session band_id to first band: #{user.bands.first.id}"
+        OauthDebugLog.log "[OAUTH DEBUG] Setting session band_id to first band: #{user.bands.first.id}"
         session[:band_id] = user.bands.first.id
       else
-        puts "[OAUTH DEBUG] User has no bands, not setting band_id"
+        OauthDebugLog.log "[OAUTH DEBUG] User has no bands, not setting band_id"
       end
 
-      puts "[OAUTH DEBUG] Final session state - user_id: #{session[:user_id]}, band_id: #{session[:band_id]}"
+      OauthDebugLog.log "[OAUTH DEBUG] Final session state - user_id: #{session[:user_id]}, band_id: #{session[:band_id]}"
 
       # Redirect to main app
-      puts "[OAUTH DEBUG] Redirecting to /gigs"
-      puts "[OAUTH DEBUG] ===== OAUTH CALLBACK COMPLETED SUCCESSFULLY ====="
+      OauthDebugLog.log "[OAUTH DEBUG] Redirecting to /gigs"
+      OauthDebugLog.log "[OAUTH DEBUG] ===== OAUTH CALLBACK COMPLETED SUCCESSFULLY ====="
       redirect '/gigs'
 
     rescue => e
-      puts "[OAUTH DEBUG] ===== OAUTH CALLBACK ERROR ====="
-      puts "[OAUTH DEBUG] Exception: #{e.class.name}: #{e.message}"
-      puts "[OAUTH DEBUG] Backtrace:"
-      puts e.backtrace.first(10).map { |line| "[OAUTH DEBUG]   #{line}" }.join("\n")
+      OauthDebugLog.log "[OAUTH DEBUG] ===== OAUTH CALLBACK ERROR ====="
+      OauthDebugLog.log "[OAUTH DEBUG] Exception: #{e.class.name}: #{e.message}"
+      OauthDebugLog.log "[OAUTH DEBUG] Backtrace:"
+      OauthDebugLog.log e.backtrace.first(10).map { |line| "[OAUTH DEBUG]   #{line}" }.join("\n")
 
       error_msg = case e.message
       when /already has .* OAuth account/
@@ -422,7 +426,7 @@ class Routes::OAuth < Sinatra::Base
       # Log error for debugging
       puts "OAuth callback error: #{e.message}" if settings.development?
 
-      puts "[OAUTH DEBUG] Redirecting to login with error: #{error_msg}"
+      OauthDebugLog.log "[OAUTH DEBUG] Redirecting to login with error: #{error_msg}"
       redirect "/login?error=#{URI.encode_www_form_component(error_msg)}"
     end
   end
