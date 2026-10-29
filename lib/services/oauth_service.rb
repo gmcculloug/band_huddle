@@ -4,6 +4,7 @@ require 'uri'
 require 'securerandom'
 require 'openssl'
 require 'jwt' # For Apple OAuth JWT authentication
+require_relative '../helpers/oauth_debug_log'
 
 class OauthService
   # OAuth provider configurations
@@ -56,26 +57,26 @@ class OauthService
 
     # Exchange authorization code for access token
     def exchange_code_for_token(provider, code, redirect_uri)
-      puts "[OAUTH DEBUG] Starting token exchange for #{provider}"
-      puts "[OAUTH DEBUG] Redirect URI: #{redirect_uri}"
+      OauthDebugLog.log "[OAUTH DEBUG] Starting token exchange for #{provider}"
+      OauthDebugLog.log "[OAUTH DEBUG] Redirect URI: #{redirect_uri}"
 
       config = PROVIDERS[provider.to_s]
       unless config
-        puts "[OAUTH DEBUG] ERROR: No config found for provider #{provider}"
+        OauthDebugLog.log "[OAUTH DEBUG] ERROR: No config found for provider #{provider}"
         return nil
       end
 
       client_id = self.client_id(provider)
-      puts "[OAUTH DEBUG] Client ID: #{client_id ? "#{client_id[0..10]}..." : 'MISSING'}"
+      OauthDebugLog.log "[OAUTH DEBUG] Client ID: #{client_id ? "#{client_id[0..10]}..." : 'MISSING'}"
 
       # Handle Apple's JWT-based authentication
       if provider.to_s == 'apple'
         client_secret = generate_apple_client_secret(client_id)
-        puts "[OAUTH DEBUG] Apple client secret: #{client_secret ? 'GENERATED' : 'FAILED TO GENERATE'}"
+        OauthDebugLog.log "[OAUTH DEBUG] Apple client secret: #{client_secret ? 'GENERATED' : 'FAILED TO GENERATE'}"
         return nil unless client_secret
       else
         client_secret = self.client_secret(provider)
-        puts "[OAUTH DEBUG] Client secret: #{client_secret ? 'PRESENT' : 'MISSING'}"
+        OauthDebugLog.log "[OAUTH DEBUG] Client secret: #{client_secret ? 'PRESENT' : 'MISSING'}"
         return nil unless client_secret
       end
 
@@ -97,10 +98,10 @@ class OauthService
         http.cert_store = OpenSSL::X509::Store.new
         http.cert_store.set_default_paths
       rescue => ssl_setup_error
-        puts "[OAUTH DEBUG] SSL setup warning: #{ssl_setup_error.message}"
+        OauthDebugLog.log "[OAUTH DEBUG] SSL setup warning: #{ssl_setup_error.message}"
         # Fallback to less strict verification in development only
         if ENV['RACK_ENV'] == 'development' || ENV['RAILS_ENV'] == 'development'
-          puts "[OAUTH DEBUG] Using less strict SSL verification for development"
+          OauthDebugLog.log "[OAUTH DEBUG] Using less strict SSL verification for development"
           http.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
       end
@@ -118,57 +119,57 @@ class OauthService
       }
 
       request.body = URI.encode_www_form(request_params)
-      puts "[OAUTH DEBUG] Making token request to: #{config[:token_url]}"
+      OauthDebugLog.log "[OAUTH DEBUG] Making token request to: #{config[:token_url]}"
 
       response = http.request(request)
-      puts "[OAUTH DEBUG] Token response status: #{response.code}"
+      OauthDebugLog.log "[OAUTH DEBUG] Token response status: #{response.code}"
 
       if response.is_a?(Net::HTTPSuccess)
-        puts "[OAUTH DEBUG] Token exchange successful"
+        OauthDebugLog.log "[OAUTH DEBUG] Token exchange successful"
         token_data = JSON.parse(response.body)
 
         # For Apple, extract user info from id_token if available
         if provider.to_s == 'apple' && token_data['id_token']
-          puts "[OAUTH DEBUG] Extracting user info from Apple ID token"
+          OauthDebugLog.log "[OAUTH DEBUG] Extracting user info from Apple ID token"
           token_data['user_info'] = decode_apple_id_token(token_data['id_token'])
         end
 
         token_data
       else
-        puts "[OAUTH DEBUG] ERROR: Token exchange failed - #{response.code}"
+        OauthDebugLog.log "[OAUTH DEBUG] ERROR: Token exchange failed - #{response.code}"
         Rails.logger.error("OAuth token exchange failed for #{provider}: #{response.code}") if defined?(Rails)
         nil
       end
     rescue JSON::ParserError => e
-      puts "[OAUTH DEBUG] ERROR: JSON parsing failed - #{e.message}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR: JSON parsing failed - #{e.message}"
       Rails.logger.error("OAuth token parsing error for #{provider}: #{e.message}") if defined?(Rails)
       nil
     rescue => e
-      puts "[OAUTH DEBUG] ERROR: Token exchange exception - #{e.message}"
-      puts "[OAUTH DEBUG] ERROR: #{e.backtrace.first(3).join("\n")}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR: Token exchange exception - #{e.message}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR: #{e.backtrace.first(3).join("\n")}"
       Rails.logger.error("OAuth token exchange error for #{provider}: #{e.message}") if defined?(Rails)
       nil
     end
 
     # Fetch user information from OAuth provider
     def fetch_user_info(provider, access_token_or_data)
-      puts "[OAUTH DEBUG] Starting user info fetch for #{provider}"
+      OauthDebugLog.log "[OAUTH DEBUG] Starting user info fetch for #{provider}"
 
       config = PROVIDERS[provider.to_s]
       unless config
-        puts "[OAUTH DEBUG] ERROR: No config found for provider #{provider}"
+        OauthDebugLog.log "[OAUTH DEBUG] ERROR: No config found for provider #{provider}"
         return nil
       end
 
       # Apple returns user info with token exchange, not separate endpoint
       if provider.to_s == 'apple'
-        puts "[OAUTH DEBUG] Processing Apple user info from token data"
+        OauthDebugLog.log "[OAUTH DEBUG] Processing Apple user info from token data"
         # For Apple, access_token_or_data is actually the token response with user_info
         user_info = access_token_or_data.is_a?(Hash) ? access_token_or_data['user_info'] : nil
-        puts "[OAUTH DEBUG] Apple user info: #{user_info ? 'PRESENT' : 'MISSING'}"
+        OauthDebugLog.log "[OAUTH DEBUG] Apple user info: #{user_info ? 'PRESENT' : 'MISSING'}"
         if user_info
           normalized = normalize_user_info(provider, user_info)
-          puts "[OAUTH DEBUG] Normalized Apple user info: #{normalized.inspect}"
+          OauthDebugLog.log "[OAUTH DEBUG] Normalized Apple user info: #{normalized.inspect}"
           return normalized
         end
         return nil
@@ -176,11 +177,11 @@ class OauthService
 
       # For other providers, fetch from user info endpoint
       unless config[:user_info_url]
-        puts "[OAUTH DEBUG] ERROR: No user info URL configured for #{provider}"
+        OauthDebugLog.log "[OAUTH DEBUG] ERROR: No user info URL configured for #{provider}"
         return nil
       end
 
-      puts "[OAUTH DEBUG] Fetching user info from: #{config[:user_info_url]}"
+      OauthDebugLog.log "[OAUTH DEBUG] Fetching user info from: #{config[:user_info_url]}"
 
       uri = URI(config[:user_info_url])
       http = Net::HTTP.new(uri.host, uri.port)
@@ -196,10 +197,10 @@ class OauthService
         http.cert_store = OpenSSL::X509::Store.new
         http.cert_store.set_default_paths
       rescue => ssl_setup_error
-        puts "[OAUTH DEBUG] SSL setup warning for user info: #{ssl_setup_error.message}"
+        OauthDebugLog.log "[OAUTH DEBUG] SSL setup warning for user info: #{ssl_setup_error.message}"
         # Fallback to less strict verification in development only
         if ENV['RACK_ENV'] == 'development' || ENV['RAILS_ENV'] == 'development'
-          puts "[OAUTH DEBUG] Using less strict SSL verification for user info in development"
+          OauthDebugLog.log "[OAUTH DEBUG] Using less strict SSL verification for user info in development"
           http.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
       end
@@ -211,14 +212,14 @@ class OauthService
       # GitHub requires User-Agent header
       if provider.to_s == 'github'
         request['User-Agent'] = 'BandHuddle-OAuth-Client'
-        puts "[OAUTH DEBUG] Added User-Agent header for GitHub"
+        OauthDebugLog.log "[OAUTH DEBUG] Added User-Agent header for GitHub"
       end
 
       response = http.request(request)
-      puts "[OAUTH DEBUG] User info response status: #{response.code}"
+      OauthDebugLog.log "[OAUTH DEBUG] User info response status: #{response.code}"
 
       if response.is_a?(Net::HTTPSuccess)
-        puts "[OAUTH DEBUG] User info fetch successful"
+        OauthDebugLog.log "[OAUTH DEBUG] User info fetch successful"
         user_info = JSON.parse(response.body)
 
         # GitHub's /user endpoint returns the public profile email, which the
@@ -230,28 +231,28 @@ class OauthService
           user_info['email_verified'] = !verified_email.nil?
         end
 
-        puts "[OAUTH DEBUG] Raw user info keys: #{user_info.keys}"
-        puts "[OAUTH DEBUG] User email: #{user_info['email']}"
-        puts "[OAUTH DEBUG] User ID: #{user_info['id']}"
-        puts "[OAUTH DEBUG] User name: #{user_info['name']}"
+        OauthDebugLog.log "[OAUTH DEBUG] Raw user info keys: #{user_info.keys}"
+        OauthDebugLog.log "[OAUTH DEBUG] User email: #{user_info['email']}"
+        OauthDebugLog.log "[OAUTH DEBUG] User ID: #{user_info['id']}"
+        OauthDebugLog.log "[OAUTH DEBUG] User name: #{user_info['name']}"
 
         # Normalize user info structure across providers
         normalized = normalize_user_info(provider, user_info)
-        puts "[OAUTH DEBUG] Normalized user info: #{normalized.inspect}"
-        puts "[OAUTH DEBUG] Name that will be used for username: #{normalized['name']}"
+        OauthDebugLog.log "[OAUTH DEBUG] Normalized user info: #{normalized.inspect}"
+        OauthDebugLog.log "[OAUTH DEBUG] Name that will be used for username: #{normalized['name']}"
         normalized
       else
-        puts "[OAUTH DEBUG] ERROR: User info fetch failed - #{response.code}: #{response.body}"
+        OauthDebugLog.log "[OAUTH DEBUG] ERROR: User info fetch failed - #{response.code}: #{response.body}"
         Rails.logger.error("OAuth user info fetch failed for #{provider}: #{response.code} #{response.body}") if defined?(Rails)
         nil
       end
     rescue JSON::ParserError => e
-      puts "[OAUTH DEBUG] ERROR: User info JSON parsing failed - #{e.message}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR: User info JSON parsing failed - #{e.message}"
       Rails.logger.error("OAuth user info parsing error for #{provider}: #{e.message}") if defined?(Rails)
       nil
     rescue => e
-      puts "[OAUTH DEBUG] ERROR: User info fetch exception - #{e.message}"
-      puts "[OAUTH DEBUG] ERROR: #{e.backtrace.first(3).join("\n")}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR: User info fetch exception - #{e.message}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR: #{e.backtrace.first(3).join("\n")}"
       Rails.logger.error("OAuth user info fetch error for #{provider}: #{e.message}") if defined?(Rails)
       nil
     end
@@ -268,6 +269,18 @@ class OauthService
       User.find_by(oauth_provider: provider, oauth_uid: oauth_uid)
     end
 
+    # Look up an account by email the same way the User model enforces
+    # uniqueness: case-insensitively. A plain find_by(email:) misses accounts
+    # whose stored address differs only in case, which would send an existing
+    # user down the account-creation path and fail on the uniqueness
+    # validation instead of linking.
+    def find_user_by_email(email)
+      email = email.to_s
+      return nil if email.empty?
+
+      User.where('LOWER(email) = ?', email.downcase).first
+    end
+
     # Find an existing account eligible for OAuth linking by email. Returns
     # nil unless the provider explicitly verified the email address, and nil
     # when the account already carries an OAuth identity (uid uniqueness
@@ -277,7 +290,7 @@ class OauthService
       return nil if email.nil? || email.empty?
       return nil unless user_info['email_verified'] == true
 
-      user = User.find_by(email: email)
+      user = find_user_by_email(email)
       return nil if user.nil?
       return nil if user.oauth_provider.present?
 
@@ -286,21 +299,21 @@ class OauthService
 
     # Create OAuth user with account creation code validation
     def create_oauth_user_with_validation(provider, user_info, account_creation_code)
-      puts "[OAUTH DEBUG] Creating OAuth user with validation for #{provider}"
-      puts "[OAUTH DEBUG] Validating account creation code"
+      OauthDebugLog.log "[OAUTH DEBUG] Creating OAuth user with validation for #{provider}"
+      OauthDebugLog.log "[OAUTH DEBUG] Validating account creation code"
 
       # Validate account creation code
       unless validate_account_creation_code(account_creation_code)
         error_msg = "Invalid account creation code. Please check your code and try again."
-        puts "[OAUTH DEBUG] ERROR: #{error_msg}"
+        OauthDebugLog.log "[OAUTH DEBUG] ERROR: #{error_msg}"
         raise error_msg
       end
 
-      puts "[OAUTH DEBUG] Account creation code validated successfully"
+      OauthDebugLog.log "[OAUTH DEBUG] Account creation code validated successfully"
       create_user_with_oauth(provider, user_info)
     rescue => e
-      puts "[OAUTH DEBUG] ERROR in create_oauth_user_with_validation: #{e.message}"
-      puts "[OAUTH DEBUG] ERROR: #{e.backtrace.first(5).join("\n")}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR in create_oauth_user_with_validation: #{e.message}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR: #{e.backtrace.first(5).join("\n")}"
       raise e
     end
 
@@ -310,31 +323,31 @@ class OauthService
 
       # Check if secret is configured
       if login_secret.nil? || login_secret.empty?
-        puts "[OAUTH DEBUG] ERROR: Account creation code not configured"
+        OauthDebugLog.log "[OAUTH DEBUG] ERROR: Account creation code not configured"
         raise "Account creation code not configured. Please contact administrator."
       end
 
       # Compare submitted code with environment secret
       result = code == login_secret
-      puts "[OAUTH DEBUG] Account creation code validation result: #{result ? 'VALID' : 'INVALID'}"
+      OauthDebugLog.log "[OAUTH DEBUG] Account creation code validation result: #{result ? 'VALID' : 'INVALID'}"
       result
     end
 
     # Find or create user from OAuth provider data (backward compatibility)
     def find_or_create_user(provider, user_info)
-      puts "[OAUTH DEBUG] Starting find_or_create_user for #{provider} (backward compatibility mode)"
-      puts "[OAUTH DEBUG] User info received: #{user_info.inspect}"
+      OauthDebugLog.log "[OAUTH DEBUG] Starting find_or_create_user for #{provider} (backward compatibility mode)"
+      OauthDebugLog.log "[OAUTH DEBUG] User info received: #{user_info.inspect}"
 
       # Try to find existing user first
       existing_user = find_existing_oauth_user(provider, user_info)
       return existing_user if existing_user
 
       # If no existing user, create new one (without code validation for backward compatibility)
-      puts "[OAUTH DEBUG] Creating new user with OAuth (no code validation)"
+      OauthDebugLog.log "[OAUTH DEBUG] Creating new user with OAuth (no code validation)"
       create_user_with_oauth(provider, user_info)
     rescue => e
-      puts "[OAUTH DEBUG] ERROR in find_or_create_user: #{e.message}"
-      puts "[OAUTH DEBUG] ERROR: #{e.backtrace.first(5).join("\n")}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR in find_or_create_user: #{e.message}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR: #{e.backtrace.first(5).join("\n")}"
       raise e
     end
 
@@ -444,15 +457,15 @@ class OauthService
 
     # Create new user with OAuth
     def create_user_with_oauth(provider, user_info)
-      puts "[OAUTH DEBUG] Creating new user with OAuth"
+      OauthDebugLog.log "[OAUTH DEBUG] Creating new user with OAuth"
 
       # Use the name from the provider as the base for username
       # Priority: name > username > email local part > fallback
       base_username = user_info['name'] || user_info['username'] || user_info['email']&.split('@')&.first || 'user'
-      puts "[OAUTH DEBUG] Using provider name for username base: #{base_username}"
+      OauthDebugLog.log "[OAUTH DEBUG] Using provider name for username base: #{base_username}"
 
       username = generate_unique_username(base_username)
-      puts "[OAUTH DEBUG] Generated unique username: #{username}"
+      OauthDebugLog.log "[OAUTH DEBUG] Generated unique username: #{username}"
 
       user_params = {
         username: username,
@@ -465,15 +478,15 @@ class OauthService
       }
 
       user = User.create!(user_params)
-      puts "[OAUTH DEBUG] New user created successfully: #{user.username} (ID: #{user.id})"
+      OauthDebugLog.log "[OAUTH DEBUG] New user created successfully: #{user.username} (ID: #{user.id})"
       user
     rescue => e
-      puts "[OAUTH DEBUG] ERROR creating user: #{e.message}"
-      puts "[OAUTH DEBUG] ERROR: #{e.backtrace.first(3).join("\n")}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR creating user: #{e.message}"
+      OauthDebugLog.log "[OAUTH DEBUG] ERROR: #{e.backtrace.first(3).join("\n")}"
 
       # Log validation errors if it's a validation failure
       if e.respond_to?(:record) && e.record&.errors&.any?
-        puts "[OAUTH DEBUG] Validation errors: #{e.record.errors.full_messages.join(', ')}"
+        OauthDebugLog.log "[OAUTH DEBUG] Validation errors: #{e.record.errors.full_messages.join(', ')}"
       end
 
       raise e

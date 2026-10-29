@@ -5,14 +5,14 @@
 <!-- Simple OAuth Context -->
 <div style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0284c7;">
     <p style="margin: 0; color: #0c4a6e;">
-        <strong>Signing in with <%= @provider&.capitalize %>:</strong> <%= @email %>
+        <strong>Signing in with <%= h(@provider.to_s.capitalize) %>:</strong> <%= h(@email) %>
     </p>
 </div>
 
 <!-- Simple explanation -->
 <p style="color: #666; margin-bottom: 20px;">
     An account already exists for this email address. Enter your password to link
-    your <%= @provider&.capitalize %> account and sign in.
+    your <%= h(@provider.to_s.capitalize) %> account and sign in.
 </p>
 
 <form method="POST" action="/auth/link_account">
@@ -25,7 +25,7 @@
                required
                autofocus
                placeholder="Enter your account password">
-        <small>Confirming links this <%= @provider&.capitalize %> identity to your existing account</small>
+        <small>Confirming links this <%= h(@provider.to_s.capitalize) %> identity to your existing account</small>
     </div>
 
     <div class="actions">
