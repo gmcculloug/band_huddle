@@ -59,9 +59,9 @@
             <% @upcoming_gigs.each do |set_list| %>
                 <div class="set-list-item" style="cursor: pointer;" onclick="window.location.href='/gigs/<%= set_list.id %>'">
                     <div class="set-list-info">
-                        <div style="display: grid; grid-template-columns: 120px <%= @view_mode == 'all' ? '100px' : '' %> 1fr auto; gap: 15px; align-items: center;">
+                        <div class="gig-item-row" style="display: grid; grid-template-columns: 120px <%= @view_mode == 'all' ? '100px' : '' %> 1fr auto; gap: 15px; align-items: center;">
                             <!-- Date Column -->
-                            <div style="font-weight: bold; color: #2d3748; font-size: 0.9em;">
+                            <div class="gig-date-col" style="font-weight: bold; color: #2d3748; font-size: 0.9em;">
                                 <% if set_list.performance_date.present? %>
                                     <%= set_list.performance_date.strftime('%a, %b %d') %>
                                 <% end %>
@@ -69,7 +69,7 @@
 
                             <!-- Band Label Column (only show if viewing all bands) -->
                             <% if @view_mode == 'all' %>
-                                <div>
+                                <div class="gig-band-col">
                                     <% band_color = band_label_color(set_list.band) %>
                                     <span style="display: inline-block; background: <%= band_color[:bg] %>; color: <%= band_color[:text] %>; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 500; white-space: nowrap;">
                                         <%= set_list.band.name %>
@@ -78,7 +78,7 @@
                             <% end %>
 
                             <!-- Gig Name and Time Column -->
-                            <div>
+                            <div class="gig-info-col">
                                 <span style="font-weight: 600; font-size: 1.1em;"><%= set_list.name %><% if set_list.private_event %> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;" role="img" aria-label="Private event"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><% end %></span>
                                 <% if set_list.start_time.present? %>
                                     <span style="font-weight: normal; color: #2d3748; font-size: 0.9em; margin-left: 8px;">
@@ -91,7 +91,7 @@
                             </div>
 
                             <!-- Action Buttons Column -->
-                            <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                            <div class="gig-actions-col" style="display: flex; gap: 4px; flex-shrink: 0;">
                                 <% if set_list.songs.any? %>
                                     <a href="/gigs/<%= set_list.id %>/gig_mode" target="_blank" class="gig-mode-button" onclick="event.stopPropagation();" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; color: #4a5568; transition: all 0.2s; flex-shrink: 0;" onmouseover="this.style.backgroundColor='#667eea'; this.style.borderColor='#5a67d8'; this.style.color='white';" onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#e2e8f0'; this.style.color='#4a5568';" title="Gig Mode - Offline Performance View">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
